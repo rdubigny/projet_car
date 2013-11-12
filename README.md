@@ -1,8 +1,17 @@
 projet_car
 ==========
 
-conception d'applications réparties sur un système de fichiers partagés 
+conception of a shared file system
 
-# members
+# launch application
 
-legouxg, rdubigny and many more!
+```
+cd ../src
+make
+./../bin/server
+```
+
+then open a terminal go to the bin folder and execute
+```
+./client
+```
