@@ -32,11 +32,6 @@ int main()
         std::cout << "getaddrinfo error" << gai_strerror(status) << std::endl;
     else std::cout << "done" << std::endl;
 
-    // std::cout << "addr : "<< host_info_list->ai_addr << ", socktype : " <<
-    //     host_info_list->ai_socktype << ", family : " << host_info_list->ai_family <<
-    //     host_info_list->ai_protocol << ", flags : " << host_info_list->ai_flags << std::endl;
-
-
     /*
         STEP 2: create socket
     */
@@ -69,7 +64,7 @@ int main()
     len = strlen(msg);
     bytes_sent = send(socketfd, msg, len, 0);
     if (bytes_sent == -1) std::cout << "send error" << std::endl;
-    else std::cout << "done\t" << bytes_sent << " bytes sent" << std::endl;
+    else std::cout << bytes_sent << " bytes sent" << std::endl;
 
     std::cout << "Waiting to receive data...\t"  << std::flush;
     ssize_t bytes_received;
@@ -78,7 +73,7 @@ int main()
     // If no data arrives, the program will just wait here until some data arrives.
     if (bytes_received == 0) std::cout << "host shut down." << std::endl ;
     if (bytes_received == -1)std::cout << "receive error!" << std::endl ;
-    std::cout << "done\t" << bytes_received << " bytes received\x1b[31;1m" << std::endl ;
+    std::cout << bytes_received << " bytes received\x1b[31;1m" << std::endl ;
     incoming_data_buffer[bytes_received] = '\0';
     std::cout << incoming_data_buffer << std::endl;
 
