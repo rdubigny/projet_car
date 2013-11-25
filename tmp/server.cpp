@@ -7,36 +7,13 @@
 
 #include <iostream>
 #include <cstring>          // needed for memset
-#include <sys/socket.h>     // needed for sockets
 #include <netdb.h>          // needed for sockets
 #include <unistd.h>         // needed for closing socket
-#include <csignal>          // needed to catch interruption signal
 #include <cstdlib>
 
-//server constants
-const char PORT[] = "5555";     // port numbers 1-1024 are reserved by the OS
-const char ADDR[] = "127.0.0.1";// localhost
-const int MAXLEN = 1024 ;       // Max lenhgt of a message
-const int MAXFD = 7 ;           // Maximum file descriptors (= maximum clients)
-const int BACKLOG = 5 ;         // max nbr of connections holded before accepted
+#include "server.h"
 
-int server_fd ; // The socket descriptor
-struct addrinfo *host_info_list;
-
-// This needs to be declared volatile because it can be altered by any other
-// thread. Meaning the compiler cannot optimise the code
-volatile fd_set the_state;
-
-pthread_mutex_t mutex_state = PTHREAD_MUTEX_INITIALIZER;
-
-// servers functions
-
-void interruptHandler(int signum);
-int server_start_listen();
-void mainloop();
-void *tcp_server_read(void *arg) ;
-
-int main()
+int Server::start()
 {
     int status;
     std::cout << "Server started on port " << PORT << std::endl;
@@ -46,15 +23,22 @@ int main()
         std::cout << "An error occured. Closing program." << std::endl;
         return 1 ;
     }
-    // register interruption signal handler
-    signal(SIGINT, interruptHandler);
 
     mainloop();
 
     return 0;
 }
 
-int server_start_listen()
+Server::~Server()
+{
+    std::cout << "Stopping server...\t\t" << std::flush;
+    freeaddrinfo(host_info_list);
+    close(server_fd);
+    std::cout << "done" << std::endl;
+    exit(0);
+}
+
+int Server::server_start_listen()
 {
     // same as the client side. The only differences is that we call bind,
     // listen and accept instead of connect.
@@ -73,7 +57,7 @@ int server_start_listen()
 
     status = getaddrinfo(ADDR, PORT, &host_info, &host_info_list);
     if (status != 0){
-        std::cout << "getaddrinfo error" << gai_strerror(status) << std::endl;
+        std::cout << "getaddrinfo error " << gai_strerror(status) << std::endl;
         return status;
     }
 
@@ -114,7 +98,7 @@ int server_start_listen()
     return 0;
 }
 
-void mainloop()
+void Server::mainloop()
 // This loop will wait for a client to connect. When the client connects, it
 // creates a new thread for the client and starts waiting again for a new client
 {
@@ -162,12 +146,12 @@ void mainloop()
         arg = (void *) new_sd;
 
         // now create a thread for this client.
-        pthread_create(&threads[new_sd], NULL, tcp_server_read, arg);
+        pthread_create(&threads[new_sd], NULL, &tcp_server_read, arg);
     }
 }
 
 
-void *tcp_server_read(void *arg)
+void *Server::tcp_server_read(void *arg)
 // This function runs in a thread for every client, and reads incomming data.
 // It also writes the incomming data to all other clients.
 {
@@ -224,15 +208,4 @@ void *tcp_server_read(void *arg)
         if (bytes_sent == -1) std::cout << "send error" << std::endl;
         else std::cout << "done" << std::endl;
     }
-}
-
-void interruptHandler(int signum)
-/* LAST STEP : free resources */
-{
-    std::cout << "\tInterrupt signal (" << signum << ") received!" << std::endl;
-    std::cout << "Stopping server...\t\t" << std::flush;
-    freeaddrinfo(host_info_list);
-    close(server_fd);
-    std::cout << "done" << std::endl;
-    exit(0);
 }
