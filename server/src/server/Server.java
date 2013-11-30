@@ -16,7 +16,9 @@ public class Server {
     public static void main(String[] args) {
         // launch the main services as threads here
         BuddyManager buddyManager = new BuddyManager();
+        buddyManager.start();
         NameNodeManager nameNodeManager = new NameNodeManager();
+        nameNodeManager.start();
         NameNode nameNode = new NameNode();
         DataNodeManager dataNodeManager = new DataNodeManager();
         DataNode dataNode = new DataNode();
