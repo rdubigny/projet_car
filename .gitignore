@@ -1,1 +1,4 @@
-/client/build/
+/server/nbproject/private/
+/client/nbproject/private/
+/server/build/
+
