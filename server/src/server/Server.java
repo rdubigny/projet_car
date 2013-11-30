@@ -20,6 +20,7 @@ public class Server {
         NameNodeManager nameNodeManager = new NameNodeManager();
         nameNodeManager.start();
         NameNode nameNode = new NameNode();
+        nameNode.start();
         DataNodeManager dataNodeManager = new DataNodeManager();
         DataNode dataNode = new DataNode();
     }

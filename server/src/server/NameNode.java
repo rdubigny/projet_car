@@ -10,6 +10,20 @@ package server;
  *
  * @author car team 16
  */
-public class NameNode {
+public class NameNode extends Thread {
+
+    public NameNode() {
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                System.out.println("NameNode: I'm alive");
+                BuddyManager.sleep(3000);
+            } catch (InterruptedException ex) {
+            }
+        }
+    }
     
 }
