@@ -10,6 +10,7 @@ import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import server.utils.ConfigReader;
 
 /**
  *
@@ -17,7 +18,7 @@ import java.util.logging.Logger;
  */
 public class Server {
 
-    static LinkedList<Address> addresses; // list of the other server datas
+    static LinkedList<Address> adresses; // list of the other server datas
     static Address myAddress; // data of this server
 
     /**
@@ -31,11 +32,13 @@ public class Server {
 
             // initialize datas for this server
             myAddress = new Address(tmpAddr, 10100, State.DATA);
-            addresses = new LinkedList();
+            adresses = new LinkedList();
             // intitialize datas for other servers
             boolean added;
-            added = addresses.add(new Address(tmpAddr, 10000, State.DATA));
-            added = addresses.add(new Address(tmpAddr, 10200, State.DATA));
+            added = adresses.add(new Address(tmpAddr, 10000, State.DATA));
+            added = adresses.add(new Address(tmpAddr, 10200, State.DATA));
+            
+            //ConfigReader.readConfigFile(Integer.parseInt(args[0]));
 
             // launch the main services as threads here
             BuddyManager buddyManager = new BuddyManager();

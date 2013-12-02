@@ -30,6 +30,12 @@ public class ServerData {
     // We know the contstructor is called only once.  Making it private
     // guarentees no other classes can call it.
     // ==> Thus this is a nice safe place to initialize your Hash
+    public ServerData(InetAddress address, int buddyPort, State state) {
+        this.address = address;
+        this.buddyPort = buddyPort;
+        this.state = state;
+    }  
+    
     public ServerData() {
         Master = null;
         Grade = 0;        

@@ -64,7 +64,7 @@ public class BuddyManager extends Thread {
             if (Server.myAddress.state == server.State.MASTER) {
                 Server.myAddress.state = server.State.DATA;
             }
-            for (Address itr : Server.addresses) {
+            for (Address itr : Server.adresses) {
                 if (itr.state == server.State.MASTER) {
                     itr.state = server.State.DATA;
                 }
@@ -161,7 +161,7 @@ public class BuddyManager extends Thread {
                         IamProposing.set(false);
                         sendAll("COORDINATOR\n");
                         Server.myAddress.state = server.State.MASTER;
-                        for (Address itr : Server.addresses) {
+                        for (Address itr : Server.adresses) {
                             if (itr.state == server.State.MASTER) {
                                 itr.state = server.State.DATA;
                             }
@@ -209,7 +209,7 @@ public class BuddyManager extends Thread {
                 System.out.println("work" + this.num + " " + this.count + "s");
                 System.out.println("status : "
                         + Server.myAddress.state.toString());
-                for (Address itr : Server.addresses) {
+                for (Address itr : Server.adresses) {
                     if (itr.state.compareTo(server.State.MASTER) == 0) {
                         System.out.println("master is : " + itr.buddyPort);
                     }
@@ -295,7 +295,7 @@ public class BuddyManager extends Thread {
      */
     private void sendMaster(String data) throws IOException {
         // go through the IP, if higher send data
-        for (Address itr : Server.addresses) {
+        for (Address itr : Server.adresses) {
             if (itr.state == server.State.MASTER) {
                 this.send(data, itr.address, itr.buddyPort);
             }
@@ -309,7 +309,7 @@ public class BuddyManager extends Thread {
      */
     private void sendHigher(String data) throws IOException {
         // go through the IP, if higher send data
-        for (Address itr : Server.addresses) {
+        for (Address itr : Server.adresses) {
             if (itr.buddyPort > Server.myAddress.buddyPort) { //TOFIX : compare ip addr
                 this.send(data, itr.address, itr.buddyPort);
             }
@@ -323,7 +323,7 @@ public class BuddyManager extends Thread {
      */
     private void sendAll(String data) throws IOException {
         // go through the ips, if different than mine send data
-        for (Address itr : Server.addresses) {
+        for (Address itr : Server.adresses) {
             this.send(data, itr.address, itr.buddyPort);
         }
     }
