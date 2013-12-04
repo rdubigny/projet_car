@@ -2,7 +2,7 @@
  * Enum of the different states of a server
  */
 
-package server;
+package server.utils;
 
 /**
  *

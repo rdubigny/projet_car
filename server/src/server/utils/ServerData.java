@@ -3,11 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package server.utils;
 
 import java.net.InetAddress;
-import server.State;
 
 /**
  *
@@ -15,10 +13,12 @@ import server.State;
  */
 public class ServerData {
 
+    private int id;
+
     private InetAddress address; // IP address
     private int buddyPort; // Port used for Buddy algorithm
     private State state;
-    
+
     private int Grade;
     private String IpMaster;
     private String Master;
@@ -30,15 +30,20 @@ public class ServerData {
     // We know the contstructor is called only once.  Making it private
     // guarentees no other classes can call it.
     // ==> Thus this is a nice safe place to initialize your Hash
-    public ServerData(InetAddress address, int buddyPort, State state) {
+    public ServerData(int id, InetAddress address, int buddyPort, State state) {
+        this.id = id;
         this.address = address;
         this.buddyPort = buddyPort;
         this.state = state;
-    }  
-    
+    }
+
     public ServerData() {
         Master = null;
-        Grade = 0;        
+        Grade = 0;
+    }
+
+    public int getId() {
+        return id;
     }
 
     /**
@@ -180,5 +185,5 @@ public class ServerData {
     public void setPortReceptionClient(String PortReceptionClient) {
         this.PortReceptionClient = PortReceptionClient;
     }
-    
+
 }

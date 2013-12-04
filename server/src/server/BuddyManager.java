@@ -9,9 +9,13 @@ import static java.lang.Thread.sleep;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import server.utils.Config;
+import server.utils.ServerData;
 
 /**
  *
@@ -35,8 +39,9 @@ public class BuddyManager extends Thread {
         this.IamProposing = new AtomicBoolean();
         this.WaitingForMasterAnswer = new AtomicBoolean();
         // create UDP socket
-        this.serverSocket = new DatagramSocket(Server.myAddress.buddyPort,
-                Server.myAddress.address);
+        this.serverSocket = new DatagramSocket(
+                Config.getInstance().getThisServer().getBuddyPort(),
+                Config.getInstance().getThisServer().getAddress());
         // initialize the executor, it is useful to execute methods as thread
         this.executor = Executors.newCachedThreadPool();
     }
@@ -50,7 +55,7 @@ public class BuddyManager extends Thread {
         private final int remotePort;
 
         /**
-         * 
+         *
          * @param remoteAddr the new master inet addr
          * @param remotePort the new master buddy port
          */
@@ -61,18 +66,7 @@ public class BuddyManager extends Thread {
 
         @Override
         public void run() {
-            if (Server.myAddress.state == server.State.MASTER) {
-                Server.myAddress.state = server.State.DATA;
-            }
-            for (Address itr : Server.adresses) {
-                if (itr.state == server.State.MASTER) {
-                    itr.state = server.State.DATA;
-                }
-                //if (itr.address == remoteAddr && //TOFIX : can't compare addr
-                if (itr.buddyPort == remotePort) {
-                    itr.state = server.State.MASTER;
-                }
-            }
+            Config.getInstance().setMaster(remoteAddr, remotePort);
         }
     }
 
@@ -86,7 +80,7 @@ public class BuddyManager extends Thread {
         private String data;
 
         /**
-         * 
+         *
          * @param data the data to send
          * @param addr the remote inet addr
          * @param port the remote port
@@ -124,14 +118,14 @@ public class BuddyManager extends Thread {
             while (true) {
                 try {
                     sleep(this.checkEvery * 1000);
-                    if (Server.myAddress.state != server.State.MASTER){
+                    if (!Config.getInstance().IamTheMaster()) {
                         try {
                             sendMaster("UP\n");
                         } catch (IOException ex) {
                         }
                         WaitingForMasterAnswer.set(true);
-                        sleep(this.consideredDeadAfter*1000);
-                        if (WaitingForMasterAnswer.get()){
+                        sleep(this.consideredDeadAfter * 1000);
+                        if (WaitingForMasterAnswer.get()) {
                             executor.submit(new propose());
                         }
                     }
@@ -160,12 +154,7 @@ public class BuddyManager extends Thread {
                     if (IamProposing.get()) {
                         IamProposing.set(false);
                         sendAll("COORDINATOR\n");
-                        Server.myAddress.state = server.State.MASTER;
-                        for (Address itr : Server.adresses) {
-                            if (itr.state == server.State.MASTER) {
-                                itr.state = server.State.DATA;
-                            }
-                        }
+                        Config.getInstance().setMaster();
                     }
                 } catch (InterruptedException | IOException ex) {
                 }
@@ -208,14 +197,17 @@ public class BuddyManager extends Thread {
             while (true) {
                 System.out.println("work" + this.num + " " + this.count + "s");
                 System.out.println("status : "
-                        + Server.myAddress.state.toString());
-                for (Address itr : Server.adresses) {
-                    if (itr.state.compareTo(server.State.MASTER) == 0) {
-                        System.out.println("master is : " + itr.buddyPort);
+                        + Config.getInstance().getThisServer().getState().
+                        toString());
+                if (!Config.getInstance().IamTheMaster()) {
+                    ServerData master = Config.getInstance().getMaster();
+                    if (master != null){
+                        int bp = master.getBuddyPort();
+                        System.out.println("master is : " + bp);
                     }
                 }
                 try {
-                    sleep(1000);
+                    sleep(1000); // sleep for one second
                     this.count++;
                 } catch (InterruptedException ex) {
                 }
@@ -241,7 +233,7 @@ public class BuddyManager extends Thread {
                 int remotePort = receivePacket.getPort();
                 System.out.println("RECEIVED FROM " + remoteAddr + ":" + remotePort
                         + ": " + msg);
-                
+
                 // analyse received message
                 if (msg.startsWith("ELECTION")) {
                     executor.submit(new answer("OK\n", remoteAddr,
@@ -254,12 +246,12 @@ public class BuddyManager extends Thread {
                             remotePort));
                 } else if (msg.startsWith("OK") && this.IamProposing.get()) {
                     this.IamProposing.set(false);
-                } else if (msg.startsWith("UP") 
-                        && Server.myAddress.state == server.State.MASTER){
+                } else if (msg.startsWith("UP")
+                        && Config.getInstance().IamTheMaster()) {
                     executor.submit(new answer("UP\n", remoteAddr,
                             remotePort));
-                } else if (msg.startsWith("UP") 
-                        && this.WaitingForMasterAnswer.get()){
+                } else if (msg.startsWith("UP")
+                        && this.WaitingForMasterAnswer.get()) {
                     this.WaitingForMasterAnswer.set(false);
                 }
 
@@ -273,10 +265,11 @@ public class BuddyManager extends Thread {
 
     /**
      * send a message to the specified port
+     *
      * @param data
      * @param addr
      * @param port
-     * @throws IOException 
+     * @throws IOException
      */
     private void send(String data, InetAddress addr, int port)
             throws IOException {
@@ -290,41 +283,62 @@ public class BuddyManager extends Thread {
 
     /**
      * send a message to the master
+     *
      * @param data
-     * @throws IOException 
+     * @throws IOException
      */
     private void sendMaster(String data) throws IOException {
         // go through the IP, if higher send data
-        for (Address itr : Server.adresses) {
-            if (itr.state == server.State.MASTER) {
-                this.send(data, itr.address, itr.buddyPort);
-            }
-        }
+        ServerData master = Config.getInstance().getMaster();
+        this.send(data, master.getAddress(), master.getBuddyPort());
     }
 
     /**
-     * send a message to all the server which have a higher score than this server
+     * send a message to all the server which have a higher score than this
+     * server
+     *
      * @param data
-     * @throws IOException 
+     * @throws IOException
      */
     private void sendHigher(String data) throws IOException {
+
+        HashMap<Integer, ServerData> list;
+        list = Config.getInstance().getServerList();
+        Iterator<Integer> itr;
+        itr = list.keySet().iterator();
+
         // go through the IP, if higher send data
-        for (Address itr : Server.adresses) {
-            if (itr.buddyPort > Server.myAddress.buddyPort) { //TOFIX : compare ip addr
-                this.send(data, itr.address, itr.buddyPort);
+        while (itr.hasNext()) {
+            Integer key = itr.next();
+            ServerData value;
+            value = list.get(key);
+            //TOFIX : compare ip addr
+            if (value.getBuddyPort()
+                    > Config.getInstance().getThisServer().getBuddyPort()) {
+                this.send(data, value.getAddress(), value.getBuddyPort());
             }
         }
     }
 
     /**
      * send a message to every recorded servers
+     *
      * @param data
-     * @throws IOException 
+     * @throws IOException
      */
     private void sendAll(String data) throws IOException {
+
+        HashMap<Integer, ServerData> list;
+        list = Config.getInstance().getServerList();
+        Iterator<Integer> itr;
+        itr = list.keySet().iterator();
+
         // go through the ips, if different than mine send data
-        for (Address itr : Server.adresses) {
-            this.send(data, itr.address, itr.buddyPort);
+        while (itr.hasNext()) {
+            Integer key = itr.next();
+            ServerData value;
+            value = list.get(key);
+            this.send(data, value.getAddress(), value.getBuddyPort());
         }
     }
 }
