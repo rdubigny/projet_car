@@ -34,12 +34,12 @@ public class Server {
             
             System.out.println("Launching services...");
             // launch the main services as threads here
-            BuddyManager buddyManager = new BuddyManager(false);
+            BuddyManager buddyManager = new BuddyManager(true);
             buddyManager.start();
             System.out.println("BuddyManager launched!");
-            /*NameNodeManager nameNodeManager = new NameNodeManager();
+            NameNodeManager nameNodeManager = new NameNodeManager(false);
             nameNodeManager.start();
-            NameNode nameNode = new NameNode();
+            /*NameNode nameNode = new NameNode(true);
             nameNode.start();
             DataNodeManager dataNodeManager = new DataNodeManager();
             DataNode dataNode = new DataNode();/
@@ -49,7 +49,7 @@ public class Server {
                 new ClientRequestManager(ss.accept());
             }*/
         } catch (Exception ex) {
-            System.out.println(ex.getStackTrace());
+            ex.printStackTrace(System.out);
         } finally {
         }
     }

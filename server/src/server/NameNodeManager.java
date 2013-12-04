@@ -11,17 +11,25 @@ package server;
  * @author car team 16
  */
 public class NameNodeManager extends Thread {
+    private final boolean verbose;
 
-    public NameNodeManager() {
+    /**
+     *
+     * @param verbose
+     */
+    public NameNodeManager(boolean verbose) {
+        this.verbose = verbose;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                System.out.println("NameNodeManager: I'm alive");
+                if (this.verbose)
+                    System.out.println("NameNodeManager: I'm alive");
                 BuddyManager.sleep(2000);
             } catch (InterruptedException ex) {
+                ex.printStackTrace(System.out);
             }
         }
     }

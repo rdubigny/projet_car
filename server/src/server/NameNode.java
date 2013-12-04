@@ -11,17 +11,20 @@ package server;
  * @author car team 16
  */
 public class NameNode extends Thread {
+    private final boolean verbose;
 
-    public NameNode() {
+    public NameNode(boolean verbose) {
+        this.verbose = verbose;
     }
 
     @Override
     public void run() {
         while (true) {
             try {
-                System.out.println("NameNode: I'm alive");
+                if (verbose) System.out.println("NameNode: I'm alive");
                 BuddyManager.sleep(3000);
             } catch (InterruptedException ex) {
+                ex.printStackTrace(System.out);
             }
         }
     }

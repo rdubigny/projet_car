@@ -100,6 +100,7 @@ public class BuddyManager extends Thread {
             try {
                 send(this.data, this.remoteAddr, this.remotePort);
             } catch (IOException ex) {
+                ex.printStackTrace(System.out);
             }
         }
     }
@@ -126,6 +127,7 @@ public class BuddyManager extends Thread {
                         try {
                             sendMaster("UP\n");
                         } catch (IOException ex) {
+                            ex.printStackTrace(System.out);
                         }
                         WaitingForMasterAnswer.set(true);
                         sleep(this.consideredDeadAfter * 1000);
@@ -134,6 +136,7 @@ public class BuddyManager extends Thread {
                         }
                     }
                 } catch (InterruptedException ex) {
+                    ex.printStackTrace(System.out);
                 }
             }
         }
@@ -161,6 +164,7 @@ public class BuddyManager extends Thread {
                         Config.getInstance().setMaster();
                     }
                 } catch (InterruptedException | IOException ex) {
+                    ex.printStackTrace(System.out);
                 }
             }
         }
@@ -179,6 +183,7 @@ public class BuddyManager extends Thread {
             try {
                 sendAll("HELLO\n");
             } catch (IOException ex) {
+                ex.printStackTrace(System.out);
             }
         }
     }
@@ -214,6 +219,7 @@ public class BuddyManager extends Thread {
                     sleep(1000); // sleep for one second
                     this.count++;
                 } catch (InterruptedException ex) {
+                    ex.printStackTrace(System.out);
                 }
             }
         }
@@ -262,7 +268,7 @@ public class BuddyManager extends Thread {
                 }
 
             } catch (IOException ex) {
-                if (verbose) System.out.println(ex.getStackTrace());
+                ex.printStackTrace(System.out);
             } finally {
                 serverSocket.disconnect();
             }

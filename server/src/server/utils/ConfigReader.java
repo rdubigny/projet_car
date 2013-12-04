@@ -5,13 +5,14 @@
 package server.utils;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 
 /**
  *
- * @author scar
+ * @author car team 16
  */
 public class ConfigReader {
 
@@ -48,12 +49,12 @@ public class ConfigReader {
                 }
             }
         } catch (IOException ex) {
-            System.out.println(ex.getStackTrace());
+            ex.printStackTrace(System.out);
         } finally {
             try{
                 br.close();
             } catch (IOException ex) {
-                System.out.println(ex.getStackTrace());
+                ex.printStackTrace(System.out);
             }
         }
     }
