@@ -238,7 +238,9 @@ public class BuddyManager extends Thread {
                 if (msg.startsWith("ELECTION")) {
                     executor.submit(new answer("OK\n", remoteAddr,
                             remotePort));
-                    executor.submit(new propose());
+                    if (!Config.getInstance().IamTheMaster()){
+                        executor.submit(new propose());
+                    }
                 } else if (msg.startsWith("COORDINATOR")) {
                     this.IamProposing.set(false);
                     this.WaitingForMasterAnswer.set(false);

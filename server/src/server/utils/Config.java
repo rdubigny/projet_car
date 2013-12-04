@@ -63,6 +63,7 @@ public class Config {
 
         Iterator<Integer> itr = this.serverList.keySet().iterator();
         this.masterId = -1;
+        this.thisServer.setState(State.DATA);
 
         while (itr.hasNext()) {
             Integer key = itr.next();
@@ -70,8 +71,8 @@ public class Config {
             if (data.getState() == State.MASTER) {
                 data.setState(State.DATA);
             }
-            if (data.getAddress().equals(address)
-                    && data.getBuddyPort() == buddyPort) {
+            // if (data.getAddress().equals(address)// TOFIX this don't
+            if (data.getBuddyPort() == buddyPort) {
                 data.setState(State.MASTER);
                 this.masterId = key;
             }

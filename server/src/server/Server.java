@@ -57,7 +57,6 @@ public class Server {
         } catch (Exception ex) {
             System.out.println(ex.getStackTrace());
         } finally {
-            System.out.println("Server Stopped!");
         }
     }
 }
