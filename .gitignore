@@ -10,6 +10,9 @@ client/dist/
 client/nbdist/
 server/nbdist/
 
+server/nbproject/build-impl.xml
+server/nbproject/genfiles.properties
+
 # Class Files #
 *.class
 
