@@ -8,7 +8,7 @@ import java.util.*;
 
 public class Memory {
     
-   public static HashMap mem;
+   /*public static HashMap mem;
    
    public Memory() {
        Memory.mem = new HashMap();
@@ -48,6 +48,6 @@ public class Memory {
            Data data = (Data)value;
            data.display();
            }
-       }
+       }*/
   
    }

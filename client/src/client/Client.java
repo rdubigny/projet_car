@@ -19,7 +19,7 @@ public class Client {
     public static void main(String[] args) {
         // Initialization of the memory
         //HashMap memory = new HashMap();
-        Memory memory = new Memory();
+        //Memory memory = new Memory();
         // Message of welcome
         System.out.println("Bienvenue sur votre système de fichiers partagés' !");
         // Message of connexion
@@ -30,8 +30,8 @@ public class Client {
         Owner client;
         client = new Owner(1, login, 3, "192.168.1.3");
         System.out.println(client.id);
-        memory.insert(client); 
-        memory.display();
+        //memory.insert(client); 
+        //memory.display();
   
         Client user = new Client();
         user.connectToServer("127.0.0.1", 10300);
