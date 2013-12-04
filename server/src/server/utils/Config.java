@@ -1,7 +1,6 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Config is a static contener which keep in memory the informations about the 
+ * state of the different servers.
  */
 package server.utils;
 
@@ -11,7 +10,7 @@ import java.util.Iterator;
 
 /**
  *
- * @author scar
+ * @author car team 16
  */
 public class Config {
 
