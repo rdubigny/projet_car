@@ -182,10 +182,20 @@ public class BuddyManager extends Thread {
         @Override
         public void run() {
             try {
-                sendAll("HELLO\n");
-            } catch (IOException ex) {
+                try {
+                    sendAll("HELLO\n");
+                } catch (IOException ex) {
+                    ex.printStackTrace(System.out);
+                }
+                WaitingForMasterAnswer.set(true);
+                sleep(consideredDeadAfter * 1000);
+                if (WaitingForMasterAnswer.get()) {
+                    executor.submit(new propose());
+                }
+            } catch (InterruptedException ex) {
                 ex.printStackTrace(System.out);
             }
+            
         }
     }
 
@@ -229,7 +239,8 @@ public class BuddyManager extends Thread {
     @Override
     public void run() {
         if (verbose) executor.submit(new statusWorker());
-        executor.submit(new propose());
+        executor.submit(new sayHello());
+        // executor.submit(new propose());
         executor.submit(new checkMaster());
         // main loop
         byte[] receiveData = new byte[1024];
@@ -266,7 +277,11 @@ public class BuddyManager extends Thread {
                 } else if (msg.startsWith("UP")
                         && this.WaitingForMasterAnswer.get()) {
                     this.WaitingForMasterAnswer.set(false);
-                } 
+                } else if (msg.startsWith("HELLO")
+                        && Config.getInstance().IamTheMaster()) {
+                    executor.submit(new answer("COORDINATOR\n", remoteAddr,
+                            remotePort));
+                }
 
             } catch (IOException ex) {
                 ex.printStackTrace(System.out);
