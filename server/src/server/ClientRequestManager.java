@@ -27,18 +27,29 @@ public class ClientRequestManager implements Runnable {
 
       @Override
       public void run() {
-          if (messenger.receivedMessage().equalsIgnoreCase("Connection")) {
-              messenger.send("Client successfully connected to server.");          
-              while (true) {
-                  String command = messenger.receivedMessage();
-                  System.out.println(command);
-                  if(command.equalsIgnoreCase("Quit"))
-                      break;
-                  String answer = execute(command);
-                  messenger.send(answer);
-              }
-          }
-          finishConexion();
+          String command;
+          do {
+              command = messenger.receivedMessage();
+              System.out.println("Executing command " + command);
+              execute(command);
+          } while (! command.equals("QUIT"));
+      }
+      
+      private void execute(String command) {
+          if (command.equals("CONNECT"))
+              messenger.send(" Client successfully connected to server.");
+          else if (command.equals("QUIT"))
+              finishConexion();
+          
+          // FIXME: implement create, read and write methods
+          else if (command.equals("CREATE"))
+              messenger.send("This command is not functional yet.");
+          else if (command.equals("READ"))
+              messenger.send("This command is not functional yet.");
+          else if (command.equals("WRITE"))
+              messenger.send("This command is not functional yet.");
+          
+          else messenger.send("Unknown command. Try: create, read, write or quit.");
       }
       
       private void finishConexion() {
@@ -49,9 +60,4 @@ public class ClientRequestManager implements Runnable {
               Logger.getLogger(ClientRequestManager.class.getName()).log(Level.SEVERE, null, ex);
           }
       }
-      
-      private String execute(String command) {
-          return "This command is not functional yet.";
-      }
-  }
-    
+}
