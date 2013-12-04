@@ -39,10 +39,10 @@ public class Server {
             System.out.println("BuddyManager launched!");
             NameNodeManager nameNodeManager = new NameNodeManager(false);
             nameNodeManager.start();
-            System.out.println("nameNodeManager launched!");
+            System.out.println("NameNodeManager launched!");
             NameNode nameNode = new NameNode(false);
             nameNode.start();
-            System.out.println("nameNode launched!");
+            System.out.println("NameNode launched!");
             DataNodeManager dataNodeManager = new DataNodeManager();
             DataNode dataNode = new DataNode();
             

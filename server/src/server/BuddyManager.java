@@ -22,6 +22,11 @@ import server.utils.ServerData;
  * @author car team 16
  */
 public class BuddyManager extends Thread {
+    
+    // class constants
+    private final int checkEvery = 20; // time in second between 2 up check
+    private final int consideredDeadAfter = 5; // time in second
+    private final int electionTimeout = 10;
 
     private final DatagramSocket serverSocket; // UDP socket
 
@@ -70,9 +75,9 @@ public class BuddyManager extends Thread {
 
         @Override
         public void run() {
-            Config.getInstance().setMaster(remoteAddr, remotePort);
+                Config.getInstance().setMaster(remoteAddr, remotePort);
+            }
         }
-    }
 
     /**
      * this thread send back a message
@@ -110,19 +115,14 @@ public class BuddyManager extends Thread {
      */
     private class checkMaster implements Runnable {
 
-        private final int checkEvery; // time in second between 2 check
-        private final int consideredDeadAfter; // time in second
-
         public checkMaster() {
-            checkEvery = 20;
-            consideredDeadAfter = 5;
         }
 
         @Override
         public void run() {
             while (true) {
                 try {
-                    sleep(this.checkEvery * 1000);
+                    sleep(checkEvery * 1000);
                     if (!Config.getInstance().IamTheMaster()) {
                         try {
                             sendMaster("UP\n");
@@ -130,7 +130,7 @@ public class BuddyManager extends Thread {
                             ex.printStackTrace(System.out);
                         }
                         WaitingForMasterAnswer.set(true);
-                        sleep(this.consideredDeadAfter * 1000);
+                        sleep(consideredDeadAfter * 1000);
                         if (WaitingForMasterAnswer.get()) {
                             executor.submit(new propose());
                         }
@@ -150,13 +150,14 @@ public class BuddyManager extends Thread {
         public propose() {
         }
 
+        @Override
         public void run() {
             if (!IamProposing.get()) {
                 try {
                     IamProposing.set(true);
                     sendHigher("ELECTION\n");
-                    sleep(10 * 1000);
-                    // if no OK received before 10 seconds last
+                    sleep(electionTimeout * 1000);
+                    // if no OK received before n seconds last
                     // then send coordinator
                     if (IamProposing.get()) {
                         IamProposing.set(false);
@@ -260,12 +261,12 @@ public class BuddyManager extends Thread {
                     this.IamProposing.set(false);
                 } else if (msg.startsWith("UP")
                         && Config.getInstance().IamTheMaster()) {
-                    executor.submit(new answer("UP\n", remoteAddr,
+                        executor.submit(new answer("UP\n", remoteAddr,
                             remotePort));
                 } else if (msg.startsWith("UP")
                         && this.WaitingForMasterAnswer.get()) {
                     this.WaitingForMasterAnswer.set(false);
-                }
+                } 
 
             } catch (IOException ex) {
                 ex.printStackTrace(System.out);
@@ -302,8 +303,8 @@ public class BuddyManager extends Thread {
     private void sendMaster(String data) throws IOException {
         // go through the IP, if higher send data
         ServerData master = Config.getInstance().getMaster();
-        this.send(data, master.getAddress(), master.getBuddyPort());
-    }
+            this.send(data, master.getAddress(), master.getBuddyPort());
+        }
 
     /**
      * send a message to all the server which have a higher score than this
