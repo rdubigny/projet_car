@@ -14,11 +14,10 @@ import server.utils.ConfigReader;
  */
 public class Server {
     static final int maxConnections = 20;
-    //static LinkedList<Address> adresses; // list of the other server datas
-    //static Address myAddress; // data of this server
 
     /**
-     * @param args the argument will be about ip and port
+     * @param args the only argument is the id of this server within the 
+     * config.txt configuration file
      */
     public static void main(String[] args) {
         System.out.println("Server started!");
@@ -49,12 +48,6 @@ public class Server {
             while (true) {
                 new ClientRequestManager(ss.accept());
             }*/
-        } catch (UnknownHostException ex) {
-            // exception occures if inet address can't be resolved
-            System.out.println(ex.getStackTrace());
-        } catch (IOException ex) {
-            // occures if their were an error with the buddy sockets
-            System.out.println(ex.getStackTrace());
         } catch (Exception ex) {
             System.out.println(ex.getStackTrace());
         } finally {
