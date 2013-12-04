@@ -193,26 +193,26 @@ public class BuddyManager extends Thread {
      */
     private class statusWorker implements Runnable {
 
-        int num;
+        int id;
         int count;
 
-        public statusWorker(int num) {
-            this.num = num;
+        public statusWorker() {
+            this.id = Config.getInstance().getThisServer().getId();
             this.count = 0;
         }
 
         @Override
         public void run() {
             while (true) {
-                if (verbose) System.out.println("work" + this.num + " " + this.count + "s");
-                if (verbose) System.out.println("status : "
+                System.out.println("server" + this.id + ": " + this.count + "s");
+                System.out.println("status: "
                         + Config.getInstance().getThisServer().getState().
                         toString());
                 if (!Config.getInstance().IamTheMaster()) {
                     ServerData master = Config.getInstance().getMaster();
                     if (master != null){
                         int bp = master.getBuddyPort();
-                        if (verbose) System.out.println("master is : " + bp);
+                        System.out.println("master is : " + bp);
                     }
                 }
                 try {
@@ -227,7 +227,7 @@ public class BuddyManager extends Thread {
 
     @Override
     public void run() {
-        executor.submit(new statusWorker(1));
+        if (verbose) executor.submit(new statusWorker());
         executor.submit(new propose());
         executor.submit(new checkMaster());
         // main loop

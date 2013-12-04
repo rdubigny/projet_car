@@ -4,8 +4,8 @@
  */
 package server;
 
-import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import server.utils.ConfigReader;
 
 /**
@@ -39,18 +39,23 @@ public class Server {
             System.out.println("BuddyManager launched!");
             NameNodeManager nameNodeManager = new NameNodeManager(false);
             nameNodeManager.start();
-            /*NameNode nameNode = new NameNode(true);
+            System.out.println("nameNodeManager launched!");
+            NameNode nameNode = new NameNode(false);
             nameNode.start();
+            System.out.println("nameNode launched!");
             DataNodeManager dataNodeManager = new DataNodeManager();
-            DataNode dataNode = new DataNode();/
+            DataNode dataNode = new DataNode();
             
+            /*
             ServerSocket ss = new ServerSocket(10300, maxConnections, InetAddress.getByName(null));
             while (true) {
                 new ClientRequestManager(ss.accept());
-            }*/
+            }
+            */
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
         } finally {
+            System.out.println("Launching services...DONE");
         }
     }
 }
