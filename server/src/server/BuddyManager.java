@@ -29,13 +29,17 @@ public class BuddyManager extends Thread {
     private AtomicBoolean IamProposing;
     private AtomicBoolean WaitingForMasterAnswer;
     private final ExecutorService executor;
+    
+    private final boolean verbose;
 
     /**
      * Initialize socket
      *
+     * @param verbose
      * @throws IOException
      */
-    public BuddyManager() throws IOException {
+    public BuddyManager(boolean verbose) throws IOException {
+        this.verbose = verbose;
         this.IamProposing = new AtomicBoolean();
         this.WaitingForMasterAnswer = new AtomicBoolean();
         // create UDP socket
@@ -195,15 +199,15 @@ public class BuddyManager extends Thread {
         @Override
         public void run() {
             while (true) {
-                System.out.println("work" + this.num + " " + this.count + "s");
-                System.out.println("status : "
+                if (verbose) System.out.println("work" + this.num + " " + this.count + "s");
+                if (verbose) System.out.println("status : "
                         + Config.getInstance().getThisServer().getState().
                         toString());
                 if (!Config.getInstance().IamTheMaster()) {
                     ServerData master = Config.getInstance().getMaster();
                     if (master != null){
                         int bp = master.getBuddyPort();
-                        System.out.println("master is : " + bp);
+                        if (verbose) System.out.println("master is : " + bp);
                     }
                 }
                 try {
@@ -231,7 +235,7 @@ public class BuddyManager extends Thread {
                 String msg = new String(receivePacket.getData());
                 InetAddress remoteAddr = receivePacket.getAddress();
                 int remotePort = receivePacket.getPort();
-                System.out.println("RECEIVED FROM " + remoteAddr + ":" + remotePort
+                if (verbose) System.out.println("RECEIVED FROM " + remoteAddr + ":" + remotePort
                         + ": " + msg);
 
                 // analyse received message
@@ -258,7 +262,7 @@ public class BuddyManager extends Thread {
                 }
 
             } catch (IOException ex) {
-                System.out.println(ex.getStackTrace());
+                if (verbose) System.out.println(ex.getStackTrace());
             } finally {
                 serverSocket.disconnect();
             }
@@ -279,7 +283,7 @@ public class BuddyManager extends Thread {
         DatagramPacket sendPacket
                 = new DatagramPacket(sendData, sendData.length, addr, port);
         this.serverSocket.send(sendPacket);
-        System.out.println("SEND TO " + addr + ":" + port
+        if (verbose) System.out.println("SEND TO " + addr + ":" + port
                 + ": " + data);
     }
 
