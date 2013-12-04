@@ -1,5 +1,19 @@
-/server/nbproject/private/
-/client/nbproject/private/
-/server/build/
+# NetBeans specific #
+server/nbproject/private/
+client/nbproject/private/
+server/build/
+client/build/
+server/nbbuild/
+client/nbbuild/
+server/dist/
+client/dist/
+client/nbdist/
+server/nbdist/
 
-/server/dist/
+# Class Files #
+*.class
+
+# Package Files #
+*.jar
+*.war
+*.ear
