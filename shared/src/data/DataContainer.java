@@ -37,6 +37,10 @@ public class DataContainer implements Serializable {
     public String getDescription() {
         return description;
     }
+
+    public Data getData() {
+        return data;
+    }
     
     @Override
     public String toString() {
