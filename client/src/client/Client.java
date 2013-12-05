@@ -17,7 +17,8 @@ import memory.*;
 public class Client {
     private Messenger messenger;
     
-    private static final Scanner scanner = new Scanner(System.in);
+    private static final EntryFormatter entryFormatter = 
+            new EntryFormatter(new Scanner(System.in));
     
     public Client(String host, int port) {
         try {
@@ -46,13 +47,13 @@ public class Client {
     
     private static void run(String host, int port) {
         System.out.println("Welcome to your shared file system!");
+        DataContainer command = entryFormatter.getLogin();
         Client user = new Client(host, port);
-        user.login();
-        DataContainer command;
+        user.execute(command);
         boolean connexionHasFinished;
         do {
             System.out.print("> ");
-            command = EntryFormatter.format(scanner);
+            command = entryFormatter.format();
             connexionHasFinished = user.execute(command);
         } while (!connexionHasFinished);
         user.close();
@@ -63,13 +64,6 @@ public class Client {
         DataContainer received = messenger.receive();
         System.out.println(received);
         return received.getContent().equals("Connexion was finished.");
-    }
-    
-    private void login() {
-        System.out.print("Please type your login : ");
-        String login = scanner.nextLine();
-        DataContainer request = new DataContainer("CONNECT", login);
-        execute(request);
     }
     
     private void close() {

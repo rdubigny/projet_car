@@ -45,13 +45,10 @@ public class Server {
             System.out.println("NameNode launched!");
             DataNodeManager dataNodeManager = new DataNodeManager();
             DataNode dataNode = new DataNode();
-            
-            /*
             ServerSocket ss = new ServerSocket(10300, maxConnections, InetAddress.getByName(null));
             while (true) {
                 new ClientRequestManager(ss.accept());
             }
-            */
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
         } finally {
