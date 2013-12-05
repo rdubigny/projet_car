@@ -11,7 +11,9 @@ client/nbdist/
 server/nbdist/
 
 server/nbproject/build-impl.xml
+client/nbproject/build-impl.xml
 server/nbproject/genfiles.properties
+client/nbproject/genfiles.properties
 
 # Class Files #
 *.class
@@ -20,6 +22,13 @@ server/nbproject/genfiles.properties
 *.jar
 *.war
 *.ear
-/shared/nbproject/private/
-/shared/build/
-/shared/dist/
+
+# NetBeans specific for shared #
+shared/nbproject/private/
+shared/build/
+shared/nbbuild/
+shared/dist/
+shared/nbdist/
+
+shared/nbproject/build-impl.xml
+shared/nbproject/genfiles.properties
