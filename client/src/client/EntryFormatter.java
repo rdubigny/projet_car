@@ -12,7 +12,13 @@ import data.DataContainer;
  * @author paulinod
  */
 public class EntryFormatter {
-    public static DataContainer format(Scanner scanner) {
+    private final Scanner scanner;
+
+    public EntryFormatter(Scanner scanner) {
+        this.scanner = scanner;
+    }
+    
+    public DataContainer format() {
         while(true) {
             String[] entry = scanner.nextLine().trim().split(" ");
             
@@ -22,5 +28,11 @@ public class EntryFormatter {
                 return new DataContainer(entry[0].toUpperCase());
             System.out.println("This command is not valid.");
         }
+    }
+    
+    public DataContainer getLogin() {
+        System.out.print("Please type your login : ");
+        String login = scanner.nextLine();
+        return new DataContainer("CONNECT", login);
     }
 }

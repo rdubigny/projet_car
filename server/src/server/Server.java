@@ -24,12 +24,12 @@ public class Server {
         try {
             
             if (args.length == 0 | args.length > 1){
-                throw new Exception("Invalid parameters");
+                //throw new Exception("Invalid parameters");
             }
 
             // initialize the config static class
             System.out.println("Reading config file...");
-            ConfigReader.readConfigFile(Integer.parseInt(args[0]));
+            ConfigReader.readConfigFile(Integer.parseInt("1"));
             System.out.println("Reading config file... DONE");
             
             System.out.println("Launching services...");
@@ -45,13 +45,11 @@ public class Server {
             System.out.println("NameNode launched!");
             DataNodeManager dataNodeManager = new DataNodeManager();
             DataNode dataNode = new DataNode();
-            
-            /*
             ServerSocket ss = new ServerSocket(10300, maxConnections, InetAddress.getByName(null));
             while (true) {
                 new ClientRequestManager(ss.accept());
             }
-            */
+            
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
         } finally {
