@@ -24,12 +24,12 @@ public class Server {
         try {
             
             if (args.length == 0 | args.length > 1){
-                //throw new Exception("Invalid parameters");
+                throw new Exception("Invalid parameters");
             }
 
             // initialize the config static class
             System.out.println("Reading config file...");
-            ConfigReader.readConfigFile(Integer.parseInt("1"));
+            ConfigReader.readConfigFile(Integer.parseInt(args[0]));
             System.out.println("Reading config file... DONE");
             
             System.out.println("Launching services...");
