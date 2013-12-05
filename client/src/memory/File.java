@@ -4,6 +4,8 @@
  */
 package memory;
 
+import data.Data;
+
 public class File extends Data {
     public String nameFile;
     public int idOwner;
@@ -19,10 +21,9 @@ public class File extends Data {
        this.data = data;
     };
     
-    public void display() {
-        System.out.print(this.nameFile);
-        System.out.print(this.idOwner);
-        System.out.print(this.size);
-        System.out.print(this.data);
+    
+    @Override
+    public String toString() {
+        return "(" + nameFile + ", " + idOwner + ", " + size + ", " + data + ")"; 
     }
 }

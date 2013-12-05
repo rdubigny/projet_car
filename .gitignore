@@ -20,3 +20,6 @@ server/nbproject/genfiles.properties
 *.jar
 *.war
 *.ear
+/shared/nbproject/private/
+/shared/build/
+/shared/dist/
