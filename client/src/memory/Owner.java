@@ -4,6 +4,7 @@
  */
 package memory;
 
+import data.Data;
 import java.util.*;
 
 class FileOwner {
@@ -23,12 +24,9 @@ public class Owner extends Data {
        this.timeoutConnexion = timeoutConnexion;
        this.ip = ip;
     };
-    
-    /* method */
-    public void display() {
-        System.out.print(this.nameOwner+" ");
-        System.out.print(this.timeoutConnexion+" ");
-        System.out.print(this.ip);
-    }
 
+    @Override
+    public String toString() {
+        return "(" + nameOwner + ", " + timeoutConnexion + ", " + ip + ")"; 
+    }
 }
