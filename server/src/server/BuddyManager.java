@@ -162,11 +162,14 @@ public class BuddyManager extends Thread {
                             // go through the ips and write the status as down
                             while (itr.hasNext()) {
                                 Integer key = itr.next();
-                                ServerData value;
-                                if (statusTable.get(key).equals(Status.DOWN)){
-                                    if (verbose) System.out.println(key+" is down!");
+                                Status newSt, oldSt;
+                                newSt = statusTable.get(key);
+                                oldSt = Config.getInstance().getServerList().get(key).getState();
+                                if (newSt != oldSt){                                    
+                                    if (verbose) System.out.println(key+" went "+newSt+"!");
+                                    if (oldSt == Status.DOWN || newSt == Status.DOWN)
                                     Config.getInstance().getServerList().
-                                            get(key).setState(Status.DOWN);
+                                            get(key).setState(statusTable.get(key));
                                 }
                             }                            
                         }
