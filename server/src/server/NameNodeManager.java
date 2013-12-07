@@ -6,6 +6,12 @@
 
 package server;
 
+import data.Messenger;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import server.utils.Config;
+
 /**
  *
  * @author car team 16
@@ -32,6 +38,18 @@ public class NameNodeManager extends Thread {
                 ex.printStackTrace(System.out);
             }
         }
+    }
+
+    public String update() {
+        int port = Config.getInstance().getServerList().get(2).getServerPort();
+        InetAddress address = Config.getInstance().getServerList().get(2).getAddress();
+        try {
+            Messenger messenger = new Messenger(new Socket(address, port));
+            messenger.send("UPDATE");
+        } catch (IOException ex) {
+            ex.printStackTrace(System.out);
+        }
+        return "";
     }
     
 }

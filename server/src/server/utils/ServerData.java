@@ -61,14 +61,14 @@ public class ServerData {
      * @return the clientPort
      */
     public int getClientPort() {
-        return buddyPort;
+        return clientPort;
     }
 
     /**
      * @return the serverPort
      */
     public int getServerPort() {
-        return buddyPort;
+        return serverPort;
     }
 
     /**

@@ -8,6 +8,7 @@ import data.Data;
 import data.DataContainer;
 import data.Messenger;
 import java.net.Socket;
+import server.utils.Config;
 
 
 /**
@@ -74,7 +75,13 @@ public class ClientRequestManager implements Runnable {
       }
       
       private void writeFile(String parameter) {
-          messenger.send("This command is not functional yet.");          
+          if (! Config.getInstance().IamTheMaster()) {
+              messenger.send("This command is not functional for data servers yet.");
+          } else {
+              String serverAddrAndPort;
+              serverAddrAndPort = Server.nameNodeManager.update();
+              messenger.send("WRITEAT");
+          }
       }
       
       private void eraseFile(String parameter) {

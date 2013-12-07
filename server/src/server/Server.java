@@ -16,6 +16,10 @@ import server.utils.ConfigReader;
 public class Server {
     static final int maxConnections = 20;
 
+    public static BuddyManager buddyManager;
+    public static NameNodeManager nameNodeManager;
+    public static NameNode nameNode;
+    
     /**
      * @param args the only argument is the id of this server within the 
      * config.txt configuration file
@@ -35,15 +39,20 @@ public class Server {
             
             System.out.println("Launching services...");
             // launch the main services as threads here
-            BuddyManager buddyManager = new BuddyManager(true);
+            buddyManager = new BuddyManager(false);
             buddyManager.start();
             System.out.println("BuddyManager launched!");
-            NameNodeManager nameNodeManager = new NameNodeManager(false);
+            
+            nameNodeManager = new NameNodeManager(false);
             nameNodeManager.start();
             System.out.println("NameNodeManager launched!");
-            NameNode nameNode = new NameNode(false);
+            nameNode = new NameNode(false);
             nameNode.start();
             System.out.println("NameNode launched!");
+            ConnectionListener serverListener = new ConnectionListener(true);
+            serverListener.start();
+            System.out.println("Now listening to server requests...");
+            
             DataNodeManager dataNodeManager = new DataNodeManager();
             DataNode dataNode = new DataNode();
             ServerSocket ss = new ServerSocket(

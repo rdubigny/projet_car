@@ -32,7 +32,7 @@ public class Client {
      */
     public static void main(String[] args) {
         while (true)
-            run("127.0.0.1", 10300);
+            run("127.0.0.1", 1025);
     }
     
     private static void run(String host, int port) {

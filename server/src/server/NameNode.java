@@ -28,5 +28,14 @@ public class NameNode extends Thread {
             }
         }
     }
+
+    /**
+     * 
+     * @return zero if the process finished successfully
+     */
+    public int update() {
+        System.out.println("nameNode.update");
+        return 0;
+    }
     
 }
