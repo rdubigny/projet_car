@@ -6,6 +6,7 @@ package server;
 
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import server.utils.Config;
 import server.utils.ConfigReader;
 
 /**
@@ -43,13 +44,11 @@ public class Server {
             NameNode nameNode = new NameNode(false);
             nameNode.start();
             System.out.println("NameNode launched!");
-            DataNodeManager dataNodeManager = new DataNodeManager(false);
-            dataNodeManager.start();
-            System.out.println("DataNodeManager launched!");
-            DataNode dataNode= new DataNode(false);
-            dataNode.start();
-            System.out.println("DataNode launched!");
-            ServerSocket ss = new ServerSocket(10300, maxConnections, InetAddress.getByName(null));
+            DataNodeManager dataNodeManager = new DataNodeManager();
+            DataNode dataNode = new DataNode();
+            ServerSocket ss = new ServerSocket(
+                    Config.getInstance().getThisServer().getClientPort(), 
+                    maxConnections, InetAddress.getByName(null));
             while (true) {
                 new ClientRequestManager(ss.accept());
             }

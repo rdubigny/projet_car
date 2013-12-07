@@ -24,9 +24,9 @@ import server.utils.ServerData;
 public class BuddyManager extends Thread {
     
     // class constants
-    private final int checkEvery = 20; // time in second between 2 up check
-    private final int consideredDeadAfter = 5; // time in second
-    private final int electionTimeout = 10;
+    private final int checkEvery = 10; // time in second between 2 up check
+    private final int consideredDeadAfter = 1; // time in second
+    private final int electionTimeout = 2;
 
     private final DatagramSocket serverSocket; // UDP socket
 
@@ -124,12 +124,12 @@ public class BuddyManager extends Thread {
                 try {
                     sleep(checkEvery * 1000);
                     if (!Config.getInstance().IamTheMaster()) {
+                        WaitingForMasterAnswer.set(true);
                         try {
-                            sendMaster("UP\n");
+                            sendMaster("UP");
                         } catch (IOException ex) {
                             ex.printStackTrace(System.out);
                         }
-                        WaitingForMasterAnswer.set(true);
                         sleep(consideredDeadAfter * 1000);
                         if (WaitingForMasterAnswer.get()) {
                             executor.submit(new propose());
@@ -155,13 +155,13 @@ public class BuddyManager extends Thread {
             if (!IamProposing.get()) {
                 try {
                     IamProposing.set(true);
-                    sendHigher("ELECTION\n");
+                    sendHigher("ELECTION");
                     sleep(electionTimeout * 1000);
                     // if no OK received before n seconds last
                     // then send coordinator
                     if (IamProposing.get()) {
                         IamProposing.set(false);
-                        sendAll("COORDINATOR\n");
+                        sendAll("COORDINATOR");
                         Config.getInstance().setMaster();
                     }
                 } catch (InterruptedException | IOException ex) {
@@ -172,7 +172,9 @@ public class BuddyManager extends Thread {
     }
 
     /**
-     * this thread allows connection testing
+     * this thread implement an improvement of the buddy algorithm. It is called
+     * at boot. It broadcast an hello message that is answered only by the
+     * master if there is one in the network, otherwise it launch an election.
      */
     private class sayHello implements Runnable {
 
@@ -182,12 +184,12 @@ public class BuddyManager extends Thread {
         @Override
         public void run() {
             try {
+                WaitingForMasterAnswer.set(true);
                 try {
-                    sendAll("HELLO\n");
+                    sendAll("HELLO");
                 } catch (IOException ex) {
                     ex.printStackTrace(System.out);
                 }
-                WaitingForMasterAnswer.set(true);
                 sleep(consideredDeadAfter * 1000);
                 if (WaitingForMasterAnswer.get()) {
                     executor.submit(new propose());
@@ -240,12 +242,12 @@ public class BuddyManager extends Thread {
     public void run() {
         if (verbose) executor.submit(new statusWorker());
         executor.submit(new sayHello());
-        // executor.submit(new propose());
         executor.submit(new checkMaster());
-        // main loop
-        byte[] receiveData = new byte[1024];
+        // main loop : listen the buddy port and launch appropriate threads to 
+        // answer
         while (true) {
             try {
+                byte[] receiveData = new byte[100];
                 // listen port
                 DatagramPacket receivePacket
                         = new DatagramPacket(receiveData, receiveData.length);
@@ -258,7 +260,7 @@ public class BuddyManager extends Thread {
 
                 // analyse received message
                 if (msg.startsWith("ELECTION")) {
-                    executor.submit(new answer("OK\n", remoteAddr,
+                    executor.submit(new answer("OK", remoteAddr,
                             remotePort));
                     if (!Config.getInstance().IamTheMaster()){
                         executor.submit(new propose());
@@ -272,14 +274,14 @@ public class BuddyManager extends Thread {
                     this.IamProposing.set(false);
                 } else if (msg.startsWith("UP")
                         && Config.getInstance().IamTheMaster()) {
-                        executor.submit(new answer("UP\n", remoteAddr,
+                        executor.submit(new answer("UP", remoteAddr,
                             remotePort));
                 } else if (msg.startsWith("UP")
                         && this.WaitingForMasterAnswer.get()) {
                     this.WaitingForMasterAnswer.set(false);
                 } else if (msg.startsWith("HELLO")
                         && Config.getInstance().IamTheMaster()) {
-                    executor.submit(new answer("COORDINATOR\n", remoteAddr,
+                    executor.submit(new answer("COORDINATOR", remoteAddr,
                             remotePort));
                 }
 
@@ -301,6 +303,7 @@ public class BuddyManager extends Thread {
      */
     private void send(String data, InetAddress addr, int port)
             throws IOException {
+        data.concat("\0");
         byte[] sendData = data.getBytes();
         DatagramPacket sendPacket
                 = new DatagramPacket(sendData, sendData.length, addr, port);

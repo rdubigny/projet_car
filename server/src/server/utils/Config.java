@@ -26,7 +26,6 @@ public class Config {
     // ==> Thus this is a nice safe place to initialize your Hash
     public Config() {
         serverList = new HashMap<>();
-        thisServer = new ServerData();
         masterId = -1; // means no master yet
     }
 
@@ -34,22 +33,22 @@ public class Config {
         return INSTANCE;
     }
 
-    public void addData(int id, InetAddress address, int buddyPort) {
-        ServerData data = new ServerData(id, address, buddyPort, State.DATA);
+    public void addData(int id, InetAddress address, int buddyPort,
+            int clientPort, int serverPort) {
+        ServerData data = new ServerData(id, address, buddyPort, clientPort, 
+                serverPort, State.DATA);
         serverList.put(id, data);
     }
 
-    public void thisServer(int id, InetAddress address, int buddyPort) {
+    public void thisServer(int id, InetAddress address, int buddyPort,
+            int clientPort, int serverPort) {
         this.thisServer
-                = new ServerData(id, address, buddyPort, State.DATA);
+                = new ServerData(id, address, buddyPort, clientPort, serverPort,
+                        State.DATA);
     }
 
     public ServerData getThisServer() {
         return thisServer;
-    }
-
-    public void setPortEmissionMaster(int id, String string) {
-        serverList.get(id).setPortEmissionMaster(string);
     }
 
     /**

@@ -32,20 +32,18 @@ public class ConfigReader {
                 
                 // format buddy port
                 int buddyPort = Integer.parseInt(tokens[2]);
+                int clientPort = Integer.parseInt(tokens[3]);
+                int serverPort = Integer.parseInt(tokens[4]);
             
                 // fill in the config structure
                 if (id != me) {
                     // fill in the Config serverList
-                    Config.getInstance().addData(id, tmpAddr, buddyPort);
-                    
-                    Config.getInstance().setPortEmissionMaster(id, tokens[3]);
-                    // TO COMPLETE
+                    Config.getInstance().addData(id, tmpAddr, buddyPort, 
+                            clientPort, serverPort);
                 }else{
                     // fill in the config info for this server
-                    Config.getInstance().thisServer(id, tmpAddr, buddyPort);
-                    Config.getInstance().getThisServer().
-                            setPortEmissionMaster(tokens[2]);
-                    // TO COMPLETE
+                    Config.getInstance().thisServer(id, tmpAddr, buddyPort, 
+                            clientPort, serverPort);
                 }
             }
         } catch (IOException ex) {
