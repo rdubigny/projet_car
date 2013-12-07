@@ -27,9 +27,6 @@ public class Client {
         }
     }
     
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
         while (true)
             run("127.0.0.1", 10300);
