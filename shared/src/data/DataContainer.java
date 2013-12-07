@@ -37,14 +37,18 @@ public class DataContainer implements Serializable {
     public String getDescription() {
         return description;
     }
+
+    public Data getData() {
+        return data;
+    }
     
     @Override
     public String toString() {
-        String s = content + "\n";
+        String s = content + " ";
         if (description != null) 
-            s += description + "\n";
+            s += description;
         if (data != null)
-            s += data.toString();
+            s += "\n" + data.toString();
         return s;
     }
     

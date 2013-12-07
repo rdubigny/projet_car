@@ -4,22 +4,21 @@
  */
 package memory;
 
-import data.Data;
-import java.util.*;
 
 class FileOwner {
     int idFile;
     String nameFile;
 }
 
-public class Owner extends Data {
-    public String nameOwner;
-    public int timeoutConnexion;
-    public String ip;
+public class Owner {
+    private int id;
+    private String nameOwner;
+    private int timeoutConnexion;
+    private String ip;
     
     /* constructor */
     public Owner(int id, String nameOwner,int timeoutConnexion, String ip) {
-       super(id);
+       this.id = id;
        this.nameOwner = nameOwner;
        this.timeoutConnexion = timeoutConnexion;
        this.ip = ip;

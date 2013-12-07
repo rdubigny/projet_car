@@ -4,6 +4,7 @@
  */
 package server;
 
+import data.Data;
 import data.DataContainer;
 import data.Messenger;
 import java.net.Socket;
@@ -37,6 +38,8 @@ public class ClientRequestManager implements Runnable {
       private boolean execute(DataContainer request) {
           String command = request.getContent();
           String parameter = request.getDescription();
+          Data data = request.getData();
+          
           if (command.equals("QUIT")) {
               finishConexion();
               return true;
@@ -45,7 +48,7 @@ public class ClientRequestManager implements Runnable {
           else if (command.equals("CONNECT"))
               login(parameter);
           else if (command.equals("CREATE"))
-              createFile(parameter);
+              createFile(data);
           else if (command.equals("READ"))
               readFile(parameter);
           else if (command.equals("WRITE"))
@@ -62,7 +65,7 @@ public class ClientRequestManager implements Runnable {
       }
       
       // FIXME: implement create, read, write and erase methods
-      private void createFile(String parameter) {
+      private void createFile(Data data) {
           messenger.send("This command is not functional yet.");
       }
       
