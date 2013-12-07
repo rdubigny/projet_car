@@ -22,8 +22,9 @@ public class Client {
     public Client(String host, int port) {
         try {
             messenger = new Messenger(new Socket(host, port));
-        } catch (IOException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException e) {
+            System.out.println("erreur");
+            //Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, e);
         }
     }
     
@@ -36,6 +37,7 @@ public class Client {
         System.out.println("\nWelcome to your shared file system!");
         DataContainer command = entryFormatter.getLogin();
         Client user = new Client(host, port);
+        System.exit(0);
         user.execute(command);
         boolean connexionHasFinished;
         do {

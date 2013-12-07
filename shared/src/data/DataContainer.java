@@ -7,15 +7,13 @@ package data;
 import java.io.Serializable;
 
 
-/**
- *
- * @author paulinod
- */
 public class DataContainer implements Serializable {
-    private String content;
+    /* attribute */
+    private String content; 
     private String description;
     private Data data;
-    
+  
+    /* constructor */
     public DataContainer(String content) {
         this.content = content;
     }
@@ -30,6 +28,7 @@ public class DataContainer implements Serializable {
         this.data = data;
     }
 
+    /* getter */
     public String getContent() {
         return content;
     }
@@ -42,6 +41,7 @@ public class DataContainer implements Serializable {
         return data;
     }
     
+    /* method */
     @Override
     public String toString() {
         String s = content + " ";

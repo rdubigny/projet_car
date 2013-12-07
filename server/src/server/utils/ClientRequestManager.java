@@ -2,7 +2,7 @@
  * ClientRequestManager is responsible for the interaction with a connected 
  * client. It receives the requests, executes them and send the answers back.
  */
-package server;
+package server.utils;
 
 import data.Data;
 import data.DataContainer;
@@ -18,7 +18,7 @@ public class ClientRequestManager implements Runnable {
       private final Messenger messenger;
       private final Thread thread;
 
-      ClientRequestManager(Socket clientSocket) {
+      public ClientRequestManager(Socket clientSocket) {
           messenger = new Messenger(clientSocket);
           thread = new Thread(this);
           thread.start();
@@ -40,22 +40,22 @@ public class ClientRequestManager implements Runnable {
           String parameter = request.getDescription();
           Data data = request.getData();
           
-          if (command.equals("QUIT")) {
+          if(command.equals("QUIT")) {
               finishConexion();
               return true;
-          }
-          
-          else if (command.equals("CONNECT"))
+          } else if (command.equals("CONNECT")) {
               login(parameter);
-          else if (command.equals("CREATE"))
+          } else if (command.equals("CREATE")) {
               createFile(data);
-          else if (command.equals("READ"))
+          } else if (command.equals("READ")) {
               readFile(parameter);
-          else if (command.equals("WRITE"))
+          } else if (command.equals("WRITE")) {
               writeFile(parameter);
-          else if (command.equals("ERASE"))
+          } else if (command.equals("ERASE")) {
               eraseFile(parameter);
-          else messenger.send("Unknown command. Try: create, read, write, erase or quit.");
+          } else {
+              messenger.send("Unknown command. Try: create, read, write, erase or quit.");
+          }
           
           return false;
       }

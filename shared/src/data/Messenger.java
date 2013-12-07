@@ -11,10 +11,7 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author paulinod
- */
+
 public class Messenger {
     private final Socket socket;
     private ObjectInputStream receivedMessage;

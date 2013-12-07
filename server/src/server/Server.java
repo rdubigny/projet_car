@@ -6,8 +6,7 @@ package server;
 
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import server.utils.Config;
-import server.utils.ConfigReader;
+import server.utils.*;
 
 /**
  *
@@ -27,7 +26,6 @@ public class Server {
             if (args.length == 0 | args.length > 1){
                 throw new Exception("Invalid parameters");
             }
-
             // initialize the config static class
             System.out.println("Reading config file...");
             ConfigReader.readConfigFile(Integer.parseInt(args[0]));
@@ -54,7 +52,7 @@ public class Server {
                     Config.getInstance().getThisServer().getClientPort(), 
                     maxConnections, InetAddress.getByName(null));
             while (true) {
-                new ClientRequestManager(ss.accept());
+                ClientRequestManager clientRequestManager = new ClientRequestManager(ss.accept());
             }
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
