@@ -87,7 +87,6 @@ echo Deploying servers...
 # kill and recreate server
 INFINITY=true
 while $INFINITY; do
-    display_pids
     echo -n "create server : "
     read number
     execute_server "$number"
