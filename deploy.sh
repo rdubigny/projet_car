@@ -3,21 +3,23 @@
 ### CONFIG ###
 
 # place where the directories of this script created
-# safety: don't erase a other directory
+# safety: don't erase a other existing directory
 DIR="$HOME/CAR_Application"
 # N server machine(s)
 N=3
 # M client machine(s)
 M=0
 # P number of ports by machine
-P=2
+P=3
 # parameters of config file
 CONFIG_FILE="server/config.txt"
+# free port from 1024 to 65535
 NP=1024
 
 ### FUNCTION ###
 
-# free port from 1024 to 65535
+# line format in this file
+# idServer address buddyPort clientPort serverPort
 function create_config_file { 
     for i in $(seq 0 $((N-1))); do    
         echo -n "$i 127.0.0.1 "
@@ -64,7 +66,7 @@ fi
 # create and launch the server in the previous repertory
 for i in $(seq 0 $((N-1))); do
     mkdir -p "$DIR"/server"$i"
-    cp server/dist/server.jar "$DIR"/server"$i"/
+    cp -r server/dist/* "$DIR"/server"$i"/
     cp server/config.txt "$DIR"/server"$i"/
     execute_server "$i"
 done
@@ -73,7 +75,7 @@ done
 # create and launch the client in the 
 for i in $(seq 0 $((M-1))); do
     mkdir -p "$DIR"/client"$i"
-    cp client/dist/client.jar "$DIR"/client"$i"/
+    cp -r client/dist/* "$DIR"/client"$i"/
     cp server/config.txt "$DIR"/client"$i"
     execute_client "$i"
 done
