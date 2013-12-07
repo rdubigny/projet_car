@@ -82,7 +82,7 @@ done
 
 # Track the done actions
 echo "$N server(s) deploy."
-echo "$M cleint(s) deploy."
+echo "$M client(s) deploy."
 echo Deploying servers...
 
 
