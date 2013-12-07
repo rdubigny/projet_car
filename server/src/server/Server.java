@@ -44,8 +44,12 @@ public class Server {
             NameNode nameNode = new NameNode(false);
             nameNode.start();
             System.out.println("NameNode launched!");
-            DataNodeManager dataNodeManager = new DataNodeManager();
-            DataNode dataNode = new DataNode();
+            DataNodeManager dataNodeManager = new DataNodeManager(false);
+            dataNodeManager.start();
+            System.out.println("dataNodeManager launched!");
+            DataNode dataNode = new DataNode(false);
+            dataNode.start();
+            System.out.println("dataNode launched!");
             ServerSocket ss = new ServerSocket(
                     Config.getInstance().getThisServer().getClientPort(), 
                     maxConnections, InetAddress.getByName(null));
