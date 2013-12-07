@@ -6,8 +6,7 @@ package server;
 
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import server.utils.Config;
-import server.utils.ConfigReader;
+import server.utils.*;
 
 /**
  *
@@ -31,7 +30,6 @@ public class Server {
             if (args.length == 0 | args.length > 1){
                 throw new Exception("Invalid parameters");
             }
-
             // initialize the config static class
             System.out.println("Reading config file...");
             ConfigReader.readConfigFile(Integer.parseInt(args[0]));
@@ -49,17 +47,17 @@ public class Server {
             nameNode = new NameNode(false);
             nameNode.start();
             System.out.println("NameNode launched!");
-            ConnectionListener serverListener = new ConnectionListener(true);
-            serverListener.start();
-            System.out.println("Now listening to server requests...");
-            
-            DataNodeManager dataNodeManager = new DataNodeManager();
-            DataNode dataNode = new DataNode();
+            DataNodeManager dataNodeManager = new DataNodeManager(false);
+            dataNodeManager.start();
+            System.out.println("dataNodeManager launched!");
+            DataNode dataNode = new DataNode(false);
+            dataNode.start();
+            System.out.println("dataNode launched!");
             ServerSocket ss = new ServerSocket(
                     Config.getInstance().getThisServer().getClientPort(), 
                     maxConnections, InetAddress.getByName(null));
             while (true) {
-                new ClientRequestManager(ss.accept());
+                ClientRequestManager clientRequestManager = new ClientRequestManager(ss.accept());
             }
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
