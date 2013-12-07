@@ -1,15 +1,19 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package server;
 
-/**
- *
- * @author car team 16
- */
-public class DataNodeManager {
+
+public class DataNodeManager  extends Thread {
+    private final boolean verbose;
+        
+    public DataNodeManager(boolean verbose) {
+        this.verbose = verbose;
+    }
+        
+    @Override
+    public void run() {
+        while (true) {
+            if (this.verbose)
+                System.out.println("DataNodeManager: I'm alive");
+        }
+    }
     
 }
