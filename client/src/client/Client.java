@@ -37,7 +37,6 @@ public class Client {
         System.out.println("\nWelcome to your shared file system!");
         DataContainer command = entryFormatter.getLogin();
         Client user = new Client(host, port);
-        System.exit(0);
         user.execute(command);
         boolean connexionHasFinished;
         do {

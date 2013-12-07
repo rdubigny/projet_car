@@ -21,6 +21,11 @@ public class ConnectionListener extends Thread {
     private final boolean listenToServer;
     private ServerSocket ss; 
 
+    /**
+     * 
+     * @param listenToServer if true, configure the listener to communicate with 
+     * other servers, else to communicate with clients
+     */
     ConnectionListener(boolean listenToServer) {
         this.listenToServer = listenToServer;
         if (listenToServer) {

@@ -18,6 +18,8 @@ public class Server {
     public static BuddyManager buddyManager;
     public static NameNodeManager nameNodeManager;
     public static NameNode nameNode;
+    public static DataNodeManager dataNodeManager;
+    public static DataNode dataNode;
     
     /**
      * @param args the only argument is the id of this server within the 
@@ -47,18 +49,19 @@ public class Server {
             nameNode = new NameNode(false);
             nameNode.start();
             System.out.println("NameNode launched!");
-            DataNodeManager dataNodeManager = new DataNodeManager(false);
+            ConnectionListener serverListener = new ConnectionListener(true);
+            serverListener.start();
+            System.out.println("Now listening to server requests...");
+            
+            dataNodeManager = new DataNodeManager(false);
             dataNodeManager.start();
             System.out.println("dataNodeManager launched!");
-            DataNode dataNode = new DataNode(false);
+            dataNode = new DataNode(false);
             dataNode.start();
             System.out.println("dataNode launched!");
-            ServerSocket ss = new ServerSocket(
-                    Config.getInstance().getThisServer().getClientPort(), 
-                    maxConnections, InetAddress.getByName(null));
-            while (true) {
-                ClientRequestManager clientRequestManager = new ClientRequestManager(ss.accept());
-            }
+            ConnectionListener clientListener = new ConnectionListener(false);
+            clientListener.start();
+            System.out.println("Now listening to client requests...");
         } catch (Exception ex) {
             ex.printStackTrace(System.out);
         } finally {
