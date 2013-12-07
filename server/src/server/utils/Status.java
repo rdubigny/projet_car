@@ -8,6 +8,6 @@ package server.utils;
  *
  * @author scar
  */
-public enum State {
+public enum Status {
         MASTER, SECONDARY, DATA, DOWN
 }

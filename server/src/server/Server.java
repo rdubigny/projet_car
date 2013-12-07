@@ -4,8 +4,6 @@
  */
 package server;
 
-import java.net.InetAddress;
-import java.net.ServerSocket;
 import server.utils.*;
 
 /**
@@ -39,7 +37,7 @@ public class Server {
             
             System.out.println("Launching services...");
             // launch the main services as threads here
-            buddyManager = new BuddyManager(false);
+            buddyManager = new BuddyManager(true);
             buddyManager.start();
             System.out.println("BuddyManager launched!");
             
@@ -54,10 +52,10 @@ public class Server {
             System.out.println("Now listening to server requests...");
             
             dataNodeManager = new DataNodeManager(false);
-            dataNodeManager.start();
+            //dataNodeManager.start();
             System.out.println("dataNodeManager launched!");
             dataNode = new DataNode(false);
-            dataNode.start();
+            //dataNode.start();
             System.out.println("dataNode launched!");
             ConnectionListener clientListener = new ConnectionListener(false);
             clientListener.start();
@@ -66,6 +64,8 @@ public class Server {
             ex.printStackTrace(System.out);
         } finally {
             System.out.println("Launching services...DONE");
+            System.out.println();
+            System.out.println();            
         }
     }
 }

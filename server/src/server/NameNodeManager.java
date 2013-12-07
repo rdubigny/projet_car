@@ -33,7 +33,7 @@ public class NameNodeManager extends Thread {
             try {
                 if (this.verbose)
                     System.out.println("NameNodeManager: I'm alive");
-                BuddyManager.sleep(2000);
+                    sleep(2000);
             } catch (InterruptedException ex) {
                 ex.printStackTrace(System.out);
             }

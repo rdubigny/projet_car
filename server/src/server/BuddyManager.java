@@ -11,18 +11,21 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import server.utils.Config;
 import server.utils.ServerData;
+import server.utils.Status;
 
 /**
  *
  * @author car team 16
  */
 public class BuddyManager extends Thread {
-    
+
     // class constants
     private final int checkEvery = 10; // time in second between 2 up check
     private final int consideredDeadAfter = 1; // time in second
@@ -33,8 +36,9 @@ public class BuddyManager extends Thread {
     // private final MulticastSocket multiServerSocket; // UDP multicast socket
     private AtomicBoolean IamProposing;
     private AtomicBoolean WaitingForMasterAnswer;
+    private ConcurrentHashMap<Integer, Status> statusTable;
     private final ExecutorService executor;
-    
+
     private final boolean verbose;
 
     /**
@@ -75,9 +79,9 @@ public class BuddyManager extends Thread {
 
         @Override
         public void run() {
-                Config.getInstance().setMaster(remoteAddr, remotePort);
-            }
+            Config.getInstance().setMaster(remoteAddr, remotePort);
         }
+    }
 
     /**
      * this thread send back a message
@@ -113,9 +117,10 @@ public class BuddyManager extends Thread {
     /**
      * this thread checks master liveness
      */
-    private class checkMaster implements Runnable {
+    private class checkStatus implements Runnable {
 
-        public checkMaster() {
+        public checkStatus() {
+            statusTable = new ConcurrentHashMap<>();
         }
 
         @Override
@@ -123,16 +128,47 @@ public class BuddyManager extends Thread {
             while (true) {
                 try {
                     sleep(checkEvery * 1000);
-                    if (!Config.getInstance().IamTheMaster()) {
+                    if (! Config.getInstance().IamTheMaster()) {
+                        // check master liveness
                         WaitingForMasterAnswer.set(true);
                         try {
-                            sendMaster("UP");
+                            sendMaster("MASTERUP");
                         } catch (IOException ex) {
                             ex.printStackTrace(System.out);
                         }
                         sleep(consideredDeadAfter * 1000);
                         if (WaitingForMasterAnswer.get()) {
                             executor.submit(new propose());
+                        }
+                    } else if (Config.getInstance().ThereIsAMaster()){
+                        // check all servers liveness
+                        Set<Integer> keySet = Config.getInstance().getServerList().keySet();
+                        Iterator<Integer> keyItr = keySet.iterator();
+                        // go through the ips and write the status as down
+                        while (keyItr.hasNext()){
+                            int key = keyItr.next();
+                            statusTable.put(key, Status.DOWN);                            
+                        }
+                        try {
+                            sendAll("UP");
+                        } catch (IOException ex) {
+                            ex.printStackTrace(System.out);
+                        }                        
+                        sleep(consideredDeadAfter * 1000);
+                        if (statusTable.contains(Status.DOWN)) {
+                            Iterator<Integer> itr;
+                            itr = statusTable.keySet().iterator();
+                            
+                            // go through the ips and write the status as down
+                            while (itr.hasNext()) {
+                                Integer key = itr.next();
+                                ServerData value;
+                                if (statusTable.get(key).equals(Status.DOWN)){
+                                    if (verbose) System.out.println(key+" is down!");
+                                    Config.getInstance().getServerList().
+                                            get(key).setState(Status.DOWN);
+                                }
+                            }                            
                         }
                     }
                 } catch (InterruptedException ex) {
@@ -197,7 +233,7 @@ public class BuddyManager extends Thread {
             } catch (InterruptedException ex) {
                 ex.printStackTrace(System.out);
             }
-            
+
         }
     }
 
@@ -217,13 +253,13 @@ public class BuddyManager extends Thread {
         @Override
         public void run() {
             while (true) {
-                System.out.println("server" + this.id + ": " + this.count + "s");
+                System.out.println("server" + this.id + ": " + this.count + "top");
                 System.out.println("status: "
                         + Config.getInstance().getThisServer().getState().
                         toString());
                 if (!Config.getInstance().IamTheMaster()) {
                     ServerData master = Config.getInstance().getMaster();
-                    if (master != null){
+                    if (master != null) {
                         int bp = master.getBuddyPort();
                         System.out.println("master is : " + bp);
                     }
@@ -240,9 +276,11 @@ public class BuddyManager extends Thread {
 
     @Override
     public void run() {
-        if (verbose) executor.submit(new statusWorker());
+        if (verbose) {
+            executor.submit(new statusWorker());
+        }
         executor.submit(new sayHello());
-        executor.submit(new checkMaster());
+        executor.submit(new checkStatus());
         // main loop : listen the buddy port and launch appropriate threads to 
         // answer
         while (true) {
@@ -255,14 +293,16 @@ public class BuddyManager extends Thread {
                 String msg = new String(receivePacket.getData());
                 InetAddress remoteAddr = receivePacket.getAddress();
                 int remotePort = receivePacket.getPort();
-                if (verbose) System.out.println("RECEIVED FROM " + remoteAddr + ":" + remotePort
-                        + ": " + msg);
+                if (verbose) {
+                    System.out.println("RECEIVED FROM " + remoteAddr + ":" + remotePort
+                            + ": " + msg);
+                }
 
                 // analyse received message
                 if (msg.startsWith("ELECTION")) {
                     executor.submit(new answer("OK", remoteAddr,
                             remotePort));
-                    if (!Config.getInstance().IamTheMaster()){
+                    if (!Config.getInstance().IamTheMaster()) {
                         executor.submit(new propose());
                     }
                 } else if (msg.startsWith("COORDINATOR")) {
@@ -272,17 +312,30 @@ public class BuddyManager extends Thread {
                             remotePort));
                 } else if (msg.startsWith("OK") && this.IamProposing.get()) {
                     this.IamProposing.set(false);
-                } else if (msg.startsWith("UP")
+                } else if (msg.startsWith("MASTERUP")
                         && Config.getInstance().IamTheMaster()) {
-                        executor.submit(new answer("UP", remoteAddr,
+                    executor.submit(new answer("MASTERUP", remoteAddr,
                             remotePort));
-                } else if (msg.startsWith("UP")
+                } else if (msg.startsWith("MASTERUP")
                         && this.WaitingForMasterAnswer.get()) {
                     this.WaitingForMasterAnswer.set(false);
                 } else if (msg.startsWith("HELLO")
                         && Config.getInstance().IamTheMaster()) {
                     executor.submit(new answer("COORDINATOR", remoteAddr,
                             remotePort));
+                } else if (msg.startsWith("UP")
+                        && ! Config.getInstance().IamTheMaster()) {
+                    String resp = "UP "
+                            +Config.getInstance().getThisServer().getId()+" "
+                            +Config.getInstance().getThisServer().getState().toString();
+                    executor.submit(new answer(resp, remoteAddr,
+                            remotePort));
+                } else if (msg.startsWith("UP")
+                        && Config.getInstance().IamTheMaster()) {
+                    String[] infos = msg.split(" ");
+                    int fId = Integer.parseInt(infos[1]);
+                    Status fNewState = Status.valueOf(infos[2].trim());
+                    statusTable.put(fId, fNewState);
                 }
 
             } catch (IOException ex) {
@@ -303,13 +356,15 @@ public class BuddyManager extends Thread {
      */
     private void send(String data, InetAddress addr, int port)
             throws IOException {
-        data.concat("\0");
-        byte[] sendData = data.getBytes();
+        String concat = data.concat("\0");
+        byte[] sendData = concat.getBytes();
         DatagramPacket sendPacket
                 = new DatagramPacket(sendData, sendData.length, addr, port);
         this.serverSocket.send(sendPacket);
-        if (verbose) System.out.println("SEND TO " + addr + ":" + port
-                + ": " + data);
+        if (verbose) {
+            System.out.println("SEND TO " + addr + ":" + port
+                    + ": " + data);
+        }
     }
 
     /**
@@ -321,8 +376,8 @@ public class BuddyManager extends Thread {
     private void sendMaster(String data) throws IOException {
         // go through the IP, if higher send data
         ServerData master = Config.getInstance().getMaster();
-            this.send(data, master.getAddress(), master.getBuddyPort());
-        }
+        this.send(data, master.getAddress(), master.getBuddyPort());
+    }
 
     /**
      * send a message to all the server which have a higher score than this

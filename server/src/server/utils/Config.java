@@ -36,7 +36,7 @@ public class Config {
     public void addData(int id, InetAddress address, int buddyPort,
             int clientPort, int serverPort) {
         ServerData data = new ServerData(id, address, buddyPort, clientPort, 
-                serverPort, State.DATA);
+                serverPort, Status.DATA);
         serverList.put(id, data);
     }
 
@@ -44,7 +44,7 @@ public class Config {
             int clientPort, int serverPort) {
         this.thisServer
                 = new ServerData(id, address, buddyPort, clientPort, serverPort,
-                        State.DATA);
+                        Status.DATA);
     }
 
     public ServerData getThisServer() {
@@ -61,24 +61,24 @@ public class Config {
 
         Iterator<Integer> itr = this.serverList.keySet().iterator();
         this.masterId = -1;
-        this.thisServer.setState(State.DATA);
+        this.thisServer.setState(Status.DATA);
 
         while (itr.hasNext()) {
             Integer key = itr.next();
             ServerData data = this.serverList.get(key);
-            if (data.getState() == State.MASTER) {
-                data.setState(State.DATA);
+            if (data.getState() == Status.MASTER) {
+                data.setState(Status.DATA);
             }
             // if (data.getAddress().equals(address)// TOFIX this don't
             if (data.getBuddyPort() == buddyPort) {
-                data.setState(State.MASTER);
+                data.setState(Status.MASTER);
                 this.masterId = key;
             }
             // if this config wasn't found in the list, it's this one perhaps
             if (this.masterId == -1) {
                 if (this.thisServer.getAddress().equals(address)
                         && this.thisServer.getBuddyPort() == buddyPort) {
-                    this.thisServer.setState(State.MASTER);
+                    this.thisServer.setState(Status.MASTER);
                     this.masterId = this.thisServer.getId();
                 }
             }
@@ -91,9 +91,9 @@ public class Config {
     public void setMaster() {
         if (!this.IamTheMaster()) {
             if (this.masterId != -1) {
-                this.serverList.get(this.masterId).setState(State.DATA);
+                this.serverList.get(this.masterId).setState(Status.DATA);
             }
-            this.thisServer.setState(State.MASTER);
+            this.thisServer.setState(Status.MASTER);
             this.masterId = this.thisServer.getId();
         }
     }
@@ -109,7 +109,11 @@ public class Config {
     }
 
     public boolean IamTheMaster() {
-        return (this.thisServer.getState() == State.MASTER);
+        return (this.thisServer.getState() == Status.MASTER);
+    }
+
+    public boolean ThereIsAMaster() {
+        return (this.masterId != -1);
     }
 
     public HashMap<Integer, ServerData> getServerList() {

@@ -12,13 +12,13 @@ import java.net.InetAddress;
  */
 public class ServerData {
 
-    private int id;
+    private final int id;
 
-    private InetAddress address; // IP address
-    private int buddyPort; // Port used for Buddy algorithm
-    private int clientPort; // port used to listen to clients
-    private int serverPort; //port used to listen to other servers
-    private State state;
+    private final InetAddress address; // IP address
+    private final int buddyPort; // Port used for Buddy algorithm
+    private final int clientPort; // port used to listen to clients
+    private final int serverPort; //port used to listen to other servers
+    private Status state;
     
     /**
      * 
@@ -30,7 +30,7 @@ public class ServerData {
      * @param state 
      */
     public ServerData(int id, InetAddress address, int buddyPort, 
-            int clientPort, int serverPort, State state) {
+            int clientPort, int serverPort, Status state) {
         this.id = id;
         this.address = address;
         this.buddyPort = buddyPort;
@@ -74,14 +74,14 @@ public class ServerData {
     /**
      * @return the state
      */
-    public State getState() {
+    public Status getState() {
         return state;
     }
 
     /**
      * @param state the state to set
      */
-    public void setState(State state) {
+    public void setState(Status state) {
         this.state = state;
     }
 
