@@ -6,6 +6,7 @@ package server;
 
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import server.utils.Config;
 import server.utils.ConfigReader;
 
 /**
@@ -45,7 +46,9 @@ public class Server {
             System.out.println("NameNode launched!");
             DataNodeManager dataNodeManager = new DataNodeManager();
             DataNode dataNode = new DataNode();
-            ServerSocket ss = new ServerSocket(10300, maxConnections, InetAddress.getByName(null));
+            ServerSocket ss = new ServerSocket(
+                    Config.getInstance().getThisServer().getClientPort(), 
+                    maxConnections, InetAddress.getByName(null));
             while (true) {
                 new ClientRequestManager(ss.accept());
             }
