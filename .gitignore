@@ -15,6 +15,9 @@ client/nbproject/build-impl.xml
 server/nbproject/genfiles.properties
 client/nbproject/genfiles.properties
 
+# Text Files #
+*.txt
+
 # Class Files #
 *.class
 
