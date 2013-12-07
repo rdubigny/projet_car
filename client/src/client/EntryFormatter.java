@@ -4,14 +4,11 @@
 
 package client;
 
-import java.util.Scanner;
-import data.DataContainer;
-import data.FileDataConverter;
+import java.util.*;
+import java.io.*;
+import data.*;
 
-/**
- *
- * @author paulinod
- */
+
 public class EntryFormatter {
     private final Scanner scanner;
 
@@ -24,12 +21,10 @@ public class EntryFormatter {
             String[] entry = scanner.nextLine().trim().split(" ");
             
             if (entry.length == 2) {
+                /* TODO */
                 if (entry[0].equals("CREATE"))
-                    return new DataContainer(entry[0].toUpperCase(), 
-                            FileDataConverter.toData(entry[1]));
                 return new DataContainer(entry[0].toUpperCase(), entry[1]);
-            }
-            else if (entry.length == 1) {
+            } else if (entry.length == 1) {
                 return new DataContainer(entry[0].toUpperCase());
             }
             System.out.println("This command is not valid.");
@@ -41,4 +36,6 @@ public class EntryFormatter {
         String login = scanner.nextLine();
         return new DataContainer("CONNECT", login);
     }
+    
+
 }
