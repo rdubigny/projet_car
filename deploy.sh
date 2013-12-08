@@ -8,7 +8,7 @@ DIR="$HOME/CAR_Application"
 # N server machine(s)
 N=3
 # M client machine(s)
-M=0
+M=1
 # P number of ports by machine
 P=3
 # parameters of config file

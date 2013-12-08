@@ -19,9 +19,10 @@ public class EntryFormatter {
         String[] entry = scanner.nextLine().trim().split(" ");
 
         if (entry.length == 2) {
-            switch (entry[0]) {
+            String command = entry[0].toUpperCase();
+            switch (command) {
                 case "PREPARECREATE":
-                    return new DataContainer(entry[0].toUpperCase(), entry[1]);
+                    return new DataContainer(command, entry[1]);
                 case "CREATE":
                 case "WRITE":
                 {
@@ -35,7 +36,7 @@ public class EntryFormatter {
                 case "READ":
                 {
                     String fileName = entry[1];
-                    return new DataContainer(entry[0].toUpperCase(), fileName);
+                    return new DataContainer(command, fileName);
                 }
             }
         } else if (entry.length == 1) {
