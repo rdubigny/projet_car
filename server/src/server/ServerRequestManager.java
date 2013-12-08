@@ -44,11 +44,10 @@ public class ServerRequestManager implements Runnable {
 
         if (command.equals("UPDATE")) {
             update(parameter);
-            messenger.send("Connexion was finished.");
             messenger.close();
             return true;
         } else if (command.equals("SECONDARY")) {
-            Config.getInstance().getThisServer().setStatus(Status.SECONDARY);
+            Config.getInstance().setStatus(Status.SECONDARY);
             messenger.close();
             return true;
         } else {
@@ -60,7 +59,13 @@ public class ServerRequestManager implements Runnable {
 
     private void update(String parameter) {
         if (Server.nameNode.update() == 0) {
+            // TODO record updated nameNode
             messenger.send("OK");
+            DataContainer request = messenger.receive();
+            String command = request.getContent();
+            if (command.equals("DELIVER")){
+                // TODO put the temporary record in main memory
+            }
         }
     }
 }

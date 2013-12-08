@@ -6,15 +6,20 @@
 
 package server;
 
+import java.util.HashMap;
+import java.util.List;
+
 /**
  *
  * @author car team 16
  */
 public class NameNode extends Thread {
     private final boolean verbose;
+    private HashMap<String, List> theNode; 
 
     public NameNode(boolean verbose) {
         this.verbose = verbose;
+        theNode = new HashMap<>();
     }
 
     @Override
@@ -28,13 +33,14 @@ public class NameNode extends Thread {
             }
         }
     }
-
+    
     /**
      * 
      * @return zero if the process finished successfully
      */
     public int update() {
         System.out.println("nameNode.update");
+        // TODO : update NameNode
         return 0;
     }
     

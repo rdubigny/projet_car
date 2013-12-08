@@ -5,6 +5,7 @@
  */
 package server;
 
+import data.DataContainer;
 import data.Messenger;
 import java.io.IOException;
 import static java.lang.Thread.sleep;
@@ -41,12 +42,14 @@ public class NameNodeManager extends Thread {
     @Override
     public void run() {
         while (true) {
-            synchronized (Config.getInstance().masterIdChange) {
+            synchronized (Config.getInstance().lockStatus) {
                 try {
-                    Config.getInstance().masterIdChange.wait();
+                    Config.getInstance().lockStatus.wait();
+                    // if this server just became upgraded to master status
+                    // it has to check launch secondary election if needed.
                     if (Config.getInstance().IamTheMaster()) {
                         // we have to wait here because this server must learn 
-                        // the servers who already are secondary first
+                        // the servers status first
                         sleep(2 * 1000);
                         // now count all recorded secondary and launch an election if needed
                         if (verbose) {
@@ -77,16 +80,23 @@ public class NameNodeManager extends Thread {
         }
     }
 
-    public String update() {
+    public void update() {
         int port = Config.getInstance().getServerList().get(2).getServerPort();
         InetAddress address = Config.getInstance().getServerList().get(2).getAddress();
         try {
             Messenger messenger = new Messenger(new Socket(address, port));
             messenger.send("UPDATE");
+            // TODO send updated nameNode
+            messenger.send("OK");
+            DataContainer request = messenger.receive();
+            String content = request.getContent();
+            if (content.equals("OK")){ 
+                messenger.send("DELIVER");
+                messenger.close();
+            }            
         } catch (IOException ex) {
             ex.printStackTrace(System.out);
         }
-        return "";
     }
 
     public void electNewSecondary(int secDown) {
@@ -129,6 +139,7 @@ public class NameNodeManager extends Thread {
                                                 value.getServerPort()));
                                 messenger.send("SECONDARY");
                                 value.setStatus(Status.SECONDARY);
+                                // TODO : send a copy of the nameNode
                                 messenger.close();
                             } catch (IOException ex) {
                                 ex.printStackTrace(System.out);

@@ -78,8 +78,7 @@ public class ClientRequestManager implements Runnable {
           if (! Config.getInstance().IamTheMaster()) {
               messenger.send("This command is not functional for data servers yet.");
           } else {
-              String serverAddrAndPort;
-              serverAddrAndPort = Server.nameNodeManager.update();
+              Server.nameNodeManager.update();
               messenger.send("WRITEAT");
           }
       }
