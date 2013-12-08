@@ -18,9 +18,9 @@ public class ClientRequestManager implements Runnable {
 
     ClientRequestManager(Socket clientSocket) {
         messenger = new Messenger(clientSocket);
+        memory = new Memory();
         thread = new Thread(this);
         thread.start();
-        memory = new Memory();
     }
 
     @Override
@@ -97,8 +97,13 @@ public class ClientRequestManager implements Runnable {
         messenger.send("This command is not functional yet.");
     }
 
-    private void eraseFile(String parameter) {
-        messenger.send("This command is not functional yet.");
+    private void eraseFile(String fileName) {
+        System.out.println("ERASE A FILE");
+        System.out.println(login + "/" + fileName);
+        Archive archive = memory.delete("mem_tmp", login + "/" + fileName);
+        if (archive == null)
+            messenger.send(fileName + " does not exist in the memory");
+        else messenger.send(archive.getFileName() + " erased from the memory");
     }
 
     private void registerFile(String parameter) {
