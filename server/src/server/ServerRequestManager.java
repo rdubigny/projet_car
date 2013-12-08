@@ -8,6 +8,8 @@ import data.Data;
 import data.DataContainer;
 import data.Messenger;
 import java.net.Socket;
+import server.utils.Config;
+import server.utils.Status;
 
 /**
  *
@@ -43,6 +45,10 @@ public class ServerRequestManager implements Runnable {
         if (command.equals("UPDATE")) {
             update(parameter);
             messenger.send("Connexion was finished.");
+            messenger.close();
+            return true;
+        } else if (command.equals("SECONDARY")) {
+            Config.getInstance().getThisServer().setStatus(Status.SECONDARY);
             messenger.close();
             return true;
         } else {

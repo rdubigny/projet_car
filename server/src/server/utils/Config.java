@@ -17,6 +17,7 @@ public class Config {
     private final HashMap<Integer, ServerData> serverList;
     private ServerData thisServer;
     private int masterId;
+    public Object masterIdChange = new Object();
 
     // As this is static, the VM makes sure that this is called only once
     private static final Config INSTANCE = new Config();
@@ -61,25 +62,24 @@ public class Config {
 
         Iterator<Integer> itr = this.serverList.keySet().iterator();
         this.masterId = -1;
-        this.thisServer.setState(Status.DATA);
 
         while (itr.hasNext()) {
             Integer key = itr.next();
             ServerData data = this.serverList.get(key);
-            if (data.getState() == Status.MASTER) {
-                data.setState(Status.DATA);
+            if (data.getStatus() == Status.MASTER) {
+                data.setStatus(Status.DATA);
             }
             // if (data.getAddress().equals(address)// TOFIX this don't
             if (data.getBuddyPort() == buddyPort) {
-                data.setState(Status.MASTER);
-                this.masterId = key;
+                data.setStatus(Status.MASTER);
+                this.setMasterId(key);
             }
             // if this config wasn't found in the list, it's this one perhaps
             if (this.masterId == -1) {
                 if (this.thisServer.getAddress().equals(address)
                         && this.thisServer.getBuddyPort() == buddyPort) {
-                    this.thisServer.setState(Status.MASTER);
-                    this.masterId = this.thisServer.getId();
+                    this.thisServer.setStatus(Status.MASTER);
+                    this.setMasterId(this.thisServer.getId());
                 }
             }
         }
@@ -91,10 +91,10 @@ public class Config {
     public void setMaster() {
         if (!this.IamTheMaster()) {
             if (this.masterId != -1) {
-                this.serverList.get(this.masterId).setState(Status.DATA);
+                this.serverList.get(this.masterId).setStatus(Status.DATA);
             }
-            this.thisServer.setState(Status.MASTER);
-            this.masterId = this.thisServer.getId();
+            this.thisServer.setStatus(Status.MASTER);
+            this.setMasterId(this.thisServer.getId());
         }
     }
 
@@ -109,7 +109,7 @@ public class Config {
     }
 
     public boolean IamTheMaster() {
-        return (this.thisServer.getState() == Status.MASTER);
+        return (this.thisServer.getStatus() == Status.MASTER);
     }
 
     public boolean ThereIsAMaster() {
@@ -118,5 +118,14 @@ public class Config {
 
     public HashMap<Integer, ServerData> getServerList() {
         return this.serverList;
+    }
+
+    public void setMasterId(int masterId) {
+        if (this.masterId != masterId){
+            this.masterId = masterId;
+            synchronized(masterIdChange){
+                masterIdChange.notify();
+            }
+        }
     }
 }
