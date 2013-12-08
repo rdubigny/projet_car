@@ -67,24 +67,37 @@ public class ClientRequestManager implements Runnable {
       
       // FIXME: implement create, read, write and erase methods
       private void createFile(Data data) {
-          messenger.send("This command is not functional yet.");
+          if (Config.getInstance().IamTheMaster()) {
+              Server.nameNodeManager.create(data);              
+          } else {
+              messenger.send("This command is not functional yet.");
+          }
       }
       
       private void readFile(String parameter) {
-          messenger.send("This command is not functional yet.");          
+          if (Config.getInstance().IamTheMaster()) {
+              Server.nameNodeManager.getIds(parameter);
+              messenger.send("READAT");
+          } else {
+              messenger.send("This command is not functional for data servers yet.");
+          }
       }
       
       private void writeFile(String parameter) {
-          if (! Config.getInstance().IamTheMaster()) {
-              messenger.send("This command is not functional for data servers yet.");
-          } else {
-              Server.nameNodeManager.update();
+          if (Config.getInstance().IamTheMaster()) {
+              Server.nameNodeManager.getIds(parameter);
               messenger.send("WRITEAT");
+          } else {
+              messenger.send("This command is not functional for data servers yet.");
           }
       }
       
       private void eraseFile(String parameter) {
-          messenger.send("This command is not functional yet.");          
+          if (Config.getInstance().IamTheMaster()) {
+              Server.nameNodeManager.delete(parameter);              
+          } else {
+              messenger.send("This command is not functional yet.");          
+          }
       }
       
       private void finishConexion() {
