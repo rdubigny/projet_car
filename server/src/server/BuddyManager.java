@@ -170,7 +170,7 @@ public class BuddyManager extends Thread {
                                     Status newSt, oldSt;
                                     newSt = statusTable.get(key);
                                     oldSt = Config.getInstance().getServerList().get(key).getStatus();
-                                    System.out.println(key+" is "+newSt+" and was "+oldSt);
+                                    //System.out.println(key+" is "+newSt+" and was "+oldSt);
                                     if (newSt == Status.DOWN && newSt != oldSt) {
                                         if (verbose) {
                                             System.out.println("server" + key + " went DOWN!");

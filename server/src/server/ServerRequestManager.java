@@ -6,8 +6,10 @@ package server;
 
 import data.Data;
 import data.DataContainer;
+import data.IdList;
 import data.Messenger;
 import java.net.Socket;
+import java.util.List;
 import server.utils.Config;
 import server.utils.Status;
 
@@ -50,6 +52,22 @@ public class ServerRequestManager implements Runnable {
             Config.getInstance().setStatus(Status.SECONDARY);
             messenger.close();
             return true;
+        } else if (command.equals("CREATEUPDATE")
+                && (Config.getInstance().getStatut() == Status.SECONDARY
+                || Config.getInstance().IamTheMaster())) {
+            if (Server.nameNode.create(parameter, ((IdList) data).list) == 0) {
+                messenger.send("OK");
+                request = messenger.receive();
+                String resp = request.getContent();
+                if (resp.equals("DELIVER")) {
+                    Server.nameNode.deliver(parameter);
+                    messenger.close();
+                }
+            } else {
+                messenger.send("KO");
+                messenger.close();
+            }
+            return true;
         } else {
             messenger.send("Unknown message!");
         }
@@ -63,7 +81,7 @@ public class ServerRequestManager implements Runnable {
             messenger.send("OK");
             DataContainer request = messenger.receive();
             String command = request.getContent();
-            if (command.equals("DELIVER")){
+            if (command.equals("DELIVER")) {
                 // TODO put the temporary record in main memory
             }
         }

@@ -7,6 +7,7 @@ package server;
 
 import data.Data;
 import data.DataContainer;
+import data.IdList;
 import data.Messenger;
 import java.io.IOException;
 import static java.lang.Thread.sleep;
@@ -14,6 +15,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import server.utils.Config;
@@ -71,8 +74,8 @@ public class NameNodeManager extends Thread {
                             }
                         }
                         // if there is not enought secondary, launch an election
-                        if (nbSec < Server.K){
-                            this.electNewSecondary(Server.K-nbSec);
+                        if (nbSec < Server.K) {
+                            this.electNewSecondary(Server.K - nbSec);
                         }
                     }
                 } catch (InterruptedException ex) {
@@ -83,6 +86,19 @@ public class NameNodeManager extends Thread {
     }
 
     public void update() {
+        HashMap<Integer, ServerData> list;
+        list = Config.getInstance().getServerList();
+        int id;
+        id = (int) Math.round(Math.random() * (double) (list.size() - 1));
+        Iterator<Integer> itr;
+        itr = list.keySet().iterator();
+        while (itr.hasNext()) {
+            Integer key = itr.next();
+            ServerData value;
+            value = list.get(key);
+            if (value.getStatus() == Status.SECONDARY) {
+            }
+        }
         int port = Config.getInstance().getServerList().get(2).getServerPort();
         InetAddress address = Config.getInstance().getServerList().get(2).getAddress();
         try {
@@ -92,24 +108,92 @@ public class NameNodeManager extends Thread {
             messenger.send("OK");
             DataContainer request = messenger.receive();
             String content = request.getContent();
-            if (content.equals("OK")){ 
+            if (content.equals("OK")) {
                 messenger.send("DELIVER");
                 messenger.close();
-            }            
+            }
         } catch (IOException ex) {
             ex.printStackTrace(System.out);
         }
     }
 
-    void register(String parameter) {        
+    /**
+     * register the new file name as written=false
+     *
+     * @param parameter
+     * @return
+     */
+    public IdList register(String parameter) {
+        IdList idList = new IdList();
+        int size = Config.getInstance().getServerList().size();
+        int thisId = Config.getInstance().getThisServer().getId();
+        // send back random ids
+        int id;
+        // if to many servers are down, the loop will run for ever
+        // to prevent that we introduce maxTries
+        int maxTries = Server.K*100;
+        do {
+            id = (int) (Math.random() * (size + 1)); // +1 for this server
+            if (!idList.list.contains(id)) {
+                if (id == thisId) {
+                    idList.list.add(id);
+                } else {
+                    if (Config.getInstance().getServerList().get(id).getStatus()
+                            != Status.DOWN) {
+                        idList.list.add(id);
+                    }
+                }
+            }
+            maxTries--;
+        } while (idList.list.size() < Server.K + 1 && maxTries > 0);
+        if (idList.list.size() < Server.K + 1){
+            idList.list.clear();
+            return idList;
+        } else {
+            int port = Config.getInstance().getServerList().get(2).getServerPort();
+            InetAddress address = Config.getInstance().getServerList().get(2).getAddress();
+            Messenger messenger;
+            try {
+                messenger = new Messenger(new Socket(address, port));
+                // if the server was found, keep going                
+                DataContainer resp = new DataContainer("CREATEUPDATE", parameter, (Data)idList);
+                messenger.send(resp);
+                DataContainer request = messenger.receive();
+                String content = request.getContent();
+                if (content.equals("OK")) {
+                    messenger.send("DELIVER");
+                    messenger.close();
+                    return idList;
+                } else if (content.equals("KO")){
+                    messenger.close();
+                    return null;
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace(System.out);
+                idList.list.clear();
+                return idList;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * send back the data servers ids (if the file is written)
+     *
+     * @param parameter
+     */
+    void getIds(String parameter
+    ) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    void getIds(String parameter) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    void unregister(String parameter) {
+    /**
+     * unregister the file amongst the secondary servers
+     *
+     * @param parameter
+     */
+    void unregister(String parameter
+    ) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -132,7 +216,7 @@ public class NameNodeManager extends Thread {
                     System.out.println("looking for "
                             + this.secondaryToFound + " secondary...");
                 }
-                synchronized(lock){
+                synchronized (lock) {
                     HashMap<Integer, ServerData> list;
                     list = Config.getInstance().getServerList();
                     Iterator<Integer> itr;
@@ -143,7 +227,7 @@ public class NameNodeManager extends Thread {
                         value = list.get(key);
                         if (value.getStatus() == Status.DATA) {
                             if (verbose) {
-                                System.out.println("New secondaryfound: "+key);
+                                System.out.println("New secondaryfound: " + key);
                             }
                             this.secondaryToFound--;
                             try {

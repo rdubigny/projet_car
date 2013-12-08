@@ -7,6 +7,7 @@ package server;
 import data.*;
 import memory.*;
 import java.net.Socket;
+import java.util.List;
 import server.utils.*;
 
 public class ClientRequestManager implements Runnable {
@@ -102,8 +103,21 @@ public class ClientRequestManager implements Runnable {
     }
 
     private void registerFile(String parameter) {
-        if (Config.getInstance().IamTheMaster()) {
-            Server.nameNodeManager.register(parameter);
+        if (parameter == null){
+            messenger.send("Wrong parameter.");
+        }else if (parameter.isEmpty()){
+            messenger.send("Wrong parameter.");
+        } else if (Config.getInstance().IamTheMaster()) {
+            IdList idList;
+            idList = Server.nameNodeManager.register(parameter);
+            if (idList == null){
+                messenger.send("Internal error. The file may already exists.");                
+            }else if (idList.list.isEmpty()){
+                messenger.send("Not enought server. Try again in a while.");
+            } else {
+                DataContainer resp = new DataContainer("WRITEAT", (Data)idList);
+                messenger.send(resp);
+            }
         } else {
             messenger.send("Internal Error");
         }

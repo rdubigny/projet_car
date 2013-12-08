@@ -20,13 +20,14 @@ public class EntryFormatter {
 
         if (entry.length == 2) {
             switch (entry[0]) {
+                case "PREPARECREATE":
+                    return new DataContainer(entry[0].toUpperCase(), entry[1]);
                 case "CREATE":
                 case "WRITE":
                 {
                     String fileName = entry[1];
                     try {
                         Archive archive = FileConverterArchive.getArchiveFromFile(fileName);
-                        return new DataContainer(entry[0].toUpperCase(), (Data) archive);
                     } catch (IOException e) {
                         return null;
                     }

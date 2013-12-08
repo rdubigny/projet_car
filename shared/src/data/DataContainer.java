@@ -28,6 +28,12 @@ public class DataContainer implements Serializable {
         this.data = data;
     }
     
+    public DataContainer(String content, String description, Data data) {
+        this(content);
+        this.description = description;
+        this.data = data;
+    }
+    
 
     /* getter */
     public String getContent() {

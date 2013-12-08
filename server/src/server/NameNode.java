@@ -16,12 +16,15 @@ import server.utils.Status;
  * @author car team 16
  */
 public class NameNode extends Thread {
+
     private final boolean verbose;
-    private HashMap<String, List> theNode; 
+    private HashMap<String, List> theNode;
+    private HashMap<String, List> theTmpNode;
 
     public NameNode(boolean verbose) {
         this.verbose = verbose;
         theNode = new HashMap<>();
+        theTmpNode = new HashMap<>();
     }
 
     @Override
@@ -50,4 +53,25 @@ public class NameNode extends Thread {
         return 0;
     }
     
+    public int create(String parameter, List<Integer> list) {
+        if (theNode.containsKey(parameter)){
+            return 1;
+        }
+        theTmpNode.put(parameter, list);
+        if (verbose){
+            String res = "";
+            for (int i = 0; i < list.size(); i++) {
+                 res += list.get(i)+", ";           
+            }
+            System.out.println("NameNode create file \""+parameter+"\" on servers: "+res);
+        }
+        return 0;
+    }
+
+    public void deliver(String parameter) {
+        if (theTmpNode.containsKey(parameter)){
+            theNode.put(parameter, theTmpNode.get(parameter));            
+        }
+        if (verbose) System.out.println("NameNode deliver \""+parameter+"\"");
+    }
 }
