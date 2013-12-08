@@ -46,7 +46,7 @@ public class ClientRequestManager implements Runnable {
                 login(parameter);
                 break;
             case "CREATE":
-                createFile((Archive)data);
+                createFile((Archive) data);
                 break;
             case "READ":
                 readFile(parameter);
@@ -56,6 +56,15 @@ public class ClientRequestManager implements Runnable {
                 break;
             case "ERASE":
                 eraseFile(parameter);
+                break;
+            case "PREPARECREATE":
+                registerFile(parameter);
+                break;
+            case "WHEREISFILE":
+                locateFile(parameter);
+                break;
+            case "PREPAREERASE":
+                unregisterFile(parameter);
                 break;
             default:
                 messenger.send("Unknown command. Try: create, read, write, erase or quit.");
@@ -85,87 +94,41 @@ public class ClientRequestManager implements Runnable {
     }
 
     private void writeFile(String parameter) {
-        if (!Config.getInstance().IamTheMaster()) {
-            messenger.send("This command is not functional for data servers yet.");
-        } else {
-            String serverAddrAndPort;
-            Server.nameNodeManager.update();
-            messenger.send("WRITEAT");
-        }
+        messenger.send("This command is not functional yet.");
     }
 
     private void eraseFile(String parameter) {
         messenger.send("This command is not functional yet.");
     }
 
-      
-      private boolean execute(DataContainer request) {
-          String command = request.getContent();
-          String parameter = request.getDescription();
-          Data data = request.getData();
-          
-          if (command.equals("QUIT")) {
-              finishConexion();
-              return true;
-          }
-          
-          else if (command.equals("CONNECT"))
-              login(parameter);
-          else if (command.equals("CREATE"))
-              createFile(data);
-          else if (command.equals("READ"))
-              readFile(parameter);
-          else if (command.equals("WRITE"))
-              writeFile(parameter);
-          else if (command.equals("ERASE"))
-              eraseFile(parameter);
-          else messenger.send("Unknown command. Try: create, read, write, erase or quit.");
-          
-          return false;
-      }
-      
-      private void login(String parameter) {
-          messenger.send(" Client " + parameter + " successfully connected to server.");
-      }
-      
-      // FIXME: implement create, read, write and erase methods
-      private void createFile(Data data) {
-          if (Config.getInstance().IamTheMaster()) {
-              Server.nameNodeManager.create(data);              
-          } else {
-              messenger.send("This command is not functional yet.");
-          }
-      }
-      
-      private void readFile(String parameter) {
-          if (Config.getInstance().IamTheMaster()) {
-              Server.nameNodeManager.getIds(parameter);
-              messenger.send("READAT");
-          } else {
-              messenger.send("This command is not functional for data servers yet.");
-          }
-      }
-      
-      private void writeFile(String parameter) {
-          if (Config.getInstance().IamTheMaster()) {
-              Server.nameNodeManager.getIds(parameter);
-              messenger.send("WRITEAT");
-          } else {
-              messenger.send("This command is not functional for data servers yet.");
-          }
-      }
-      
-      private void eraseFile(String parameter) {
-          if (Config.getInstance().IamTheMaster()) {
-              Server.nameNodeManager.delete(parameter);              
-          } else {
-              messenger.send("This command is not functional yet.");          
-          }
-      }
-      
-      private void finishConexion() {
-          messenger.send("Connexion was finished.");
-          messenger.close();
-      }
-}
+    private void registerFile(String parameter) {
+        if (Config.getInstance().IamTheMaster()) {
+            Server.nameNodeManager.register(parameter);
+        } else {
+            messenger.send("Internal Error");
+        }
+    }
 
+    private void locateFile(String parameter) {
+        if (Config.getInstance().IamTheMaster()) {
+            Server.nameNodeManager.getIds(parameter);
+            // if ids == null error!
+            messenger.send("WRITEAT");
+        } else {
+            messenger.send("Internal Error");
+        }
+    }
+
+    private void unregisterFile(String parameter) {
+        if (Config.getInstance().IamTheMaster()) {
+            Server.nameNodeManager.unregister(parameter);
+        } else {
+            messenger.send("Internal Error");
+        }
+    }
+
+    private void finishConnection() {
+        messenger.send("Connexion was finished.");
+        messenger.close();
+    }
+}

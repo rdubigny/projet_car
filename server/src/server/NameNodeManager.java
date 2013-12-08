@@ -101,7 +101,7 @@ public class NameNodeManager extends Thread {
         }
     }
 
-    void create(Data data) {
+    void register(String parameter) {        
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -109,7 +109,7 @@ public class NameNodeManager extends Thread {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    void delete(String parameter) {
+    void unregister(String parameter) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
