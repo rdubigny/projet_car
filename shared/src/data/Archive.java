@@ -2,8 +2,9 @@ package data;
 
 public class Archive extends Data {
     /* attribute */
-    public String fileName;
-    public byte[] bytes;
+    private String fileName;
+    private String owner;
+    private byte[] bytes;
     
     /* constructor */
     public Archive(String fileName, byte[] bytes) {
@@ -14,6 +15,10 @@ public class Archive extends Data {
     /* getter */
     public String getFileName() {
         return fileName;
+    }
+    
+    public String getOwner() {
+        return owner;
     }
     
     public byte[] getBytes() {

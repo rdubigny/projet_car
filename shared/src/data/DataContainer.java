@@ -27,6 +27,7 @@ public class DataContainer implements Serializable {
         this(content);
         this.data = data;
     }
+    
 
     /* getter */
     public String getContent() {

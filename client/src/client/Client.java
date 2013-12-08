@@ -13,6 +13,7 @@ public class Client {
     private Messenger messenger;
     private static final EntryFormatter entryFormatter = 
             new EntryFormatter(new Scanner(System.in));
+    private static String login;
     
     /* constructor */
     public Client(String host, int port) {
@@ -27,22 +28,51 @@ public class Client {
     private static void run(String host, int port) {
         System.out.println("\nWelcome to your shared file system!");
         DataContainer command = entryFormatter.getLogin();
-        Client user = new Client(host, port);
-        user.execute(command);
-        boolean connexionHasFinished;
+        login = command.getDescription();
+        Client user = new Client(host, port);  
+        boolean connexionHasFinished = user.execute(command);
         do {
             System.out.print("> ");
             command = entryFormatter.format();
-            connexionHasFinished = user.execute(command);
+            if(command!=null) {
+                connexionHasFinished = user.execute(command);
+            } else {
+                System.out.println("Unknown command. Try: create, read, write, erase or quit.");
+            }             
         } while (!connexionHasFinished);
         user.close();
     }
     
+    /**
+     * 
+     * @param command
+     * @return false if the connection is finished, else true. 
+     */
     private boolean execute(DataContainer command) {
+        // client sends its command
         messenger.send(command);
+        // client wait for a response
         DataContainer received = messenger.receive();
-        System.out.println(received);
-        return received.getContent().equals("Connexion was finished.");
+        // client treats datum 
+        treatment(received);
+        System.out.println(received.getContent());
+        return received.getContent().equals("Connection was finished.");
+    }
+    
+    
+    private void treatment(DataContainer datacontainer) {
+        if(datacontainer.getContent().equals("FILE")) {
+            Archive archive = (Archive)datacontainer.getData();
+            try {
+                if(archive!=null) {
+                    FileConverterArchive.getFileFromArchive(archive.getFileName(), archive.getBytes());
+                } else {
+                    System.out.println("File doesn't exist !");
+                }
+            } catch(IOException  e) {
+                System.out.println("Error file not created !");
+            }    
+          }
     }
     
     private void close() {
@@ -53,6 +83,5 @@ public class Client {
     public static void main(String[] args) {
         while (true)
             run("127.0.0.1", 1025);
-
     }
 }
