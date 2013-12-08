@@ -37,6 +37,7 @@ public class BuddyManager extends Thread {
     private AtomicBoolean IamProposing;
     private AtomicBoolean WaitingForMasterAnswer;
     private ConcurrentHashMap<Integer, Status> statusTable;
+    private final Object lockStatusTable;
     private final ExecutorService executor;
 
     private final boolean verbose;
@@ -48,6 +49,7 @@ public class BuddyManager extends Thread {
      * @throws IOException
      */
     public BuddyManager(boolean verbose) throws IOException {
+        this.lockStatusTable = new Object();
         this.verbose = verbose;
         this.IamProposing = new AtomicBoolean();
         this.WaitingForMasterAnswer = new AtomicBoolean();
@@ -128,7 +130,7 @@ public class BuddyManager extends Thread {
             while (true) {
                 try {
                     sleep(checkEvery * 1000);
-                    if (! Config.getInstance().IamTheMaster()) {
+                    if (!Config.getInstance().IamTheMaster()) {
                         // check master liveness
                         WaitingForMasterAnswer.set(true);
                         try {
@@ -140,35 +142,50 @@ public class BuddyManager extends Thread {
                         if (WaitingForMasterAnswer.get()) {
                             executor.submit(new propose());
                         }
-                    } else if (Config.getInstance().ThereIsAMaster()){
+                    } else if (Config.getInstance().ThereIsAMaster()) {
                         // check all servers liveness
                         Set<Integer> keySet = Config.getInstance().getServerList().keySet();
                         Iterator<Integer> keyItr = keySet.iterator();
-                        // go through the ips and write the status as down
-                        while (keyItr.hasNext()){
-                            int key = keyItr.next();
-                            statusTable.put(key, Status.DOWN);                            
-                        }
-                        try {
-                            sendAll("UP");
-                        } catch (IOException ex) {
-                            ex.printStackTrace(System.out);
-                        }                        
-                        sleep(consideredDeadAfter * 1000);
-                        if (statusTable.contains(Status.DOWN)) {
-                            Iterator<Integer> itr;
-                            itr = statusTable.keySet().iterator();
-                            
-                            // go through the ips and write the status as down
-                            while (itr.hasNext()) {
-                                Integer key = itr.next();
-                                ServerData value;
-                                if (statusTable.get(key).equals(Status.DOWN)){
-                                    if (verbose) System.out.println(key+" is down!");
-                                    Config.getInstance().getServerList().
-                                            get(key).setState(Status.DOWN);
+                        // we must ensure that propose is not modifying
+                        // statusTable in the same time
+                        synchronized(lockStatusTable){                       
+                            while (keyItr.hasNext()) {
+                                int key = keyItr.next();
+                                statusTable.put(key, Status.DOWN);
+                            }
+                            try {
+                                sendAll("UP");
+                            } catch (IOException ex) {
+                                ex.printStackTrace(System.out);
+                            }
+                            sleep(consideredDeadAfter * 1000);
+                            if (statusTable.contains(Status.DOWN)) {
+                                int SecDown = 0;
+                                Iterator<Integer> itr;
+                                itr = statusTable.keySet().iterator();
+                                
+                                // record the down servers if necessary
+                                while (itr.hasNext()) {
+                                    Integer key = itr.next();
+                                    Status newSt, oldSt;
+                                    newSt = statusTable.get(key);
+                                    oldSt = Config.getInstance().getServerList().get(key).getStatus();
+                                    System.out.println(key+" is "+newSt+" and was "+oldSt);
+                                    if (newSt == Status.DOWN && newSt != oldSt) {
+                                        if (verbose) {
+                                            System.out.println("server" + key + " went DOWN!");
+                                        }
+                                        Config.getInstance().getServerList().
+                                                get(key).setStatus(Status.DOWN);
+                                        if (oldSt == Status.SECONDARY) {
+                                            SecDown++;
+                                        }
+                                    }
                                 }
-                            }                            
+                                if (SecDown > 0) {
+                                    Server.nameNodeManager.electNewSecondary(SecDown);
+                                }
+                            }
                         }
                     }
                 } catch (InterruptedException ex) {
@@ -199,6 +216,40 @@ public class BuddyManager extends Thread {
                         IamProposing.set(false);
                         sendAll("COORDINATOR");
                         Config.getInstance().setMaster();
+                        // now we need to learn the status
+                        // generate a new list of status
+                        Set<Integer> keySet = Config.getInstance().getServerList().keySet();
+                        Iterator<Integer> keyItr = keySet.iterator();
+                        // we must ensure that checkStatus is not modifying
+                        // statusTable in the same time
+                        synchronized(lockStatusTable){
+                            // mark all status as down
+                            while (keyItr.hasNext()) {
+                                int key = keyItr.next();
+                                statusTable.put(key, Status.DOWN);
+                            }
+                            // broadcast "up" to all so they send back their status
+                            try {
+                                sendAll("UP");
+                            } catch (IOException ex) {
+                                ex.printStackTrace(System.out);
+                            }
+                            try {
+                                sleep(consideredDeadAfter * 1000);
+                            } catch (InterruptedException ex) {
+                                ex.printStackTrace(System.out);
+                            }
+                            // update all status
+                            Iterator<Integer> itr;
+                            itr = statusTable.keySet().iterator();
+
+                            while (itr.hasNext()) {
+                                Integer key = itr.next();
+                                Status newSt = statusTable.get(key);
+                                Config.getInstance().getServerList().
+                                        get(key).setStatus(newSt);
+                            }
+                        }
                     }
                 } catch (InterruptedException | IOException ex) {
                     ex.printStackTrace(System.out);
@@ -222,7 +273,7 @@ public class BuddyManager extends Thread {
             try {
                 WaitingForMasterAnswer.set(true);
                 try {
-                    sendAll("HELLO");
+                    sendAll("HELLO " + Config.getInstance().getThisServer().getId());
                 } catch (IOException ex) {
                     ex.printStackTrace(System.out);
                 }
@@ -255,7 +306,7 @@ public class BuddyManager extends Thread {
             while (true) {
                 System.out.println("server" + this.id + ": " + this.count + "top");
                 System.out.println("status: "
-                        + Config.getInstance().getThisServer().getState().
+                        + Config.getInstance().getThisServer().getStatus().
                         toString());
                 if (!Config.getInstance().IamTheMaster()) {
                     ServerData master = Config.getInstance().getMaster();
@@ -323,11 +374,15 @@ public class BuddyManager extends Thread {
                         && Config.getInstance().IamTheMaster()) {
                     executor.submit(new answer("COORDINATOR", remoteAddr,
                             remotePort));
+                    int id = Integer.parseInt(msg.substring(6).trim());
+                    Status st = Config.getInstance().getServerList().get(id).getStatus();
+                    Config.getInstance().getServerList().get(id).setStatus(
+                            Status.DATA);
                 } else if (msg.startsWith("UP")
-                        && ! Config.getInstance().IamTheMaster()) {
+                        && !Config.getInstance().IamTheMaster()) {
                     String resp = "UP "
-                            +Config.getInstance().getThisServer().getId()+" "
-                            +Config.getInstance().getThisServer().getState().toString();
+                            + Config.getInstance().getThisServer().getId() + " "
+                            + Config.getInstance().getThisServer().getStatus().toString();
                     executor.submit(new answer(resp, remoteAddr,
                             remotePort));
                 } else if (msg.startsWith("UP")

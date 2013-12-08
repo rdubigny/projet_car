@@ -18,7 +18,7 @@ public class ServerData {
     private final int buddyPort; // Port used for Buddy algorithm
     private final int clientPort; // port used to listen to clients
     private final int serverPort; //port used to listen to other servers
-    private Status state;
+    private Status status;
     
     /**
      * 
@@ -27,16 +27,16 @@ public class ServerData {
      * @param buddyPort
      * @param clientPort
      * @param serverPort
-     * @param state 
+     * @param status 
      */
     public ServerData(int id, InetAddress address, int buddyPort, 
-            int clientPort, int serverPort, Status state) {
+            int clientPort, int serverPort, Status status) {
         this.id = id;
         this.address = address;
         this.buddyPort = buddyPort;
         this.clientPort = clientPort;
         this.serverPort = serverPort;
-        this.state = state;
+        this.status = status;
     }
 
     public int getId() {
@@ -72,17 +72,17 @@ public class ServerData {
     }
 
     /**
-     * @return the state
+     * @return the status
      */
-    public Status getState() {
-        return state;
+    public Status getStatus() {
+        return status;
     }
 
     /**
-     * @param state the state to set
+     * @param status the status to set
      */
-    public void setState(Status state) {
-        this.state = state;
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
 }

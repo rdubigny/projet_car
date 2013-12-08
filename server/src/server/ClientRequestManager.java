@@ -40,7 +40,7 @@ public class ClientRequestManager implements Runnable {
         Data data = request.getData();
         switch (command) {
             case "QUIT":
-                finishConexion();
+                finishConnection();
                 return true;
             case "CONNECT":
                 login(parameter);
@@ -89,7 +89,7 @@ public class ClientRequestManager implements Runnable {
             messenger.send("This command is not functional for data servers yet.");
         } else {
             String serverAddrAndPort;
-            serverAddrAndPort = Server.nameNodeManager.update();
+            Server.nameNodeManager.update();
             messenger.send("WRITEAT");
         }
     }
@@ -98,8 +98,10 @@ public class ClientRequestManager implements Runnable {
         messenger.send("This command is not functional yet.");
     }
 
-    private void finishConexion() {
-        messenger.send("Connexion was finished.");
-        messenger.close();
-    }
+      
+      private void finishConnection() {
+          messenger.send("Connection was finished.");
+          messenger.close();
+      }
 }
+
