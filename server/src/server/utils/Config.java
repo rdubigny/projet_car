@@ -129,7 +129,7 @@ public class Config {
         if (this.thisServer.getStatus() != newStatus){
             this.thisServer.setStatus(newStatus);
             synchronized(lockStatus){
-                lockStatus.notify();
+                lockStatus.notifyAll();
             }
         }
     }

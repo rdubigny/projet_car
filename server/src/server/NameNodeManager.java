@@ -5,6 +5,7 @@
  */
 package server;
 
+import data.Data;
 import data.DataContainer;
 import data.Messenger;
 import java.io.IOException;
@@ -45,6 +46,7 @@ public class NameNodeManager extends Thread {
             synchronized (Config.getInstance().lockStatus) {
                 try {
                     Config.getInstance().lockStatus.wait();
+                    // TODO if the server was DATA and became master then we need a copy from secondary
                     // if this server just became upgraded to master status
                     // it has to check launch secondary election if needed.
                     if (Config.getInstance().IamTheMaster()) {
@@ -97,6 +99,18 @@ public class NameNodeManager extends Thread {
         } catch (IOException ex) {
             ex.printStackTrace(System.out);
         }
+    }
+
+    void create(Data data) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    void getIds(String parameter) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    void delete(String parameter) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     public void electNewSecondary(int secDown) {

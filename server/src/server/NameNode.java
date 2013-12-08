@@ -8,6 +8,8 @@ package server;
 
 import java.util.HashMap;
 import java.util.List;
+import server.utils.Config;
+import server.utils.Status;
 
 /**
  *
@@ -25,11 +27,15 @@ public class NameNode extends Thread {
     @Override
     public void run() {
         while (true) {
-            try {
-                if (verbose) System.out.println("NameNode: I'm alive");
-                BuddyManager.sleep(3000);
-            } catch (InterruptedException ex) {
-                ex.printStackTrace(System.out);
+            synchronized (Config.getInstance().lockStatus) {
+                try {
+                    Config.getInstance().lockStatus.wait();
+                    if (Config.getInstance().getStatut() == Status.SECONDARY){
+                        if (verbose) System.out.println("NameNode activated!");
+                    }
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace(System.out);
+                }
             }
         }
     }

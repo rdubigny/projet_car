@@ -45,7 +45,7 @@ public class Server {
             nameNodeManager = new NameNodeManager(true);
             nameNodeManager.start();
             System.out.println("NameNodeManager launched!");
-            nameNode = new NameNode(false);
+            nameNode = new NameNode(true);
             nameNode.start();
             System.out.println("NameNode launched!");
             ConnectionListener serverListener = new ConnectionListener(true);

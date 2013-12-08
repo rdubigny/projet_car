@@ -170,12 +170,13 @@ public class BuddyManager extends Thread {
                                     Status newSt, oldSt;
                                     newSt = statusTable.get(key);
                                     oldSt = Config.getInstance().getServerList().get(key).getStatus();
+                                    System.out.println(key+" is "+newSt+" and was "+oldSt);
                                     if (newSt == Status.DOWN && newSt != oldSt) {
                                         if (verbose) {
                                             System.out.println("server" + key + " went DOWN!");
                                         }
                                         Config.getInstance().getServerList().
-                                                get(key).setStatus(newSt);
+                                                get(key).setStatus(Status.DOWN);
                                         if (oldSt == Status.SECONDARY) {
                                             SecDown++;
                                         }
@@ -375,10 +376,8 @@ public class BuddyManager extends Thread {
                             remotePort));
                     int id = Integer.parseInt(msg.substring(6).trim());
                     Status st = Config.getInstance().getServerList().get(id).getStatus();
-                    if (st == Status.DOWN) {
-                        Config.getInstance().getServerList().get(id).setStatus(
-                                Status.DATA);
-                    }
+                    Config.getInstance().getServerList().get(id).setStatus(
+                            Status.DATA);
                 } else if (msg.startsWith("UP")
                         && !Config.getInstance().IamTheMaster()) {
                     String resp = "UP "
