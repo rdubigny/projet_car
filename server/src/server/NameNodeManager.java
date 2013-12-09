@@ -324,7 +324,6 @@ public class NameNodeManager extends Thread {
                                                 value.getServerPort()));
                                 messenger.send("SECONDARY");
                                 value.setStatus(Status.SECONDARY);
-                                // TODO : send a copy of the nameNode
                                 messenger.close();
                             } catch (IOException ex) {
                                 ex.printStackTrace(System.out);

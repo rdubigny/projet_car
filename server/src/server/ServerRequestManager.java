@@ -9,6 +9,7 @@ import data.DataContainer;
 import data.IdList;
 import data.Messenger;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
 import server.utils.Config;
 import server.utils.Status;
@@ -72,6 +73,16 @@ public class ServerRequestManager implements Runnable {
                 && (Config.getInstance().getStatut() == Status.SECONDARY
                 || Config.getInstance().IamTheMaster())) {
             Server.nameNode.delete(parameter);
+            messenger.close();
+            return true;
+        } else if (command.equals("GIVEMEMYNAMENODE")
+                && (Config.getInstance().getStatut() == Status.SECONDARY
+                || Config.getInstance().IamTheMaster())) {
+            data.NameNode masterNameNode = 
+                    new data.NameNode(Server.nameNode.getTheNode());
+            DataContainer resp = new DataContainer("WRITEAT", 
+                    (Data)masterNameNode);
+            messenger.send(resp);
             messenger.close();
             return true;
         } else {
