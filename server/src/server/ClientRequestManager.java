@@ -15,13 +15,12 @@ public class ClientRequestManager implements Runnable {
     private final Messenger messenger;
     private final Thread thread;
     private String login;
-    private Memory memory;
 
     ClientRequestManager(Socket clientSocket) {
         messenger = new Messenger(clientSocket);
-        memory = new Memory();
         thread = new Thread(this);
         thread.start();
+        login = "memory";
     }
 
     @Override
@@ -45,28 +44,25 @@ public class ClientRequestManager implements Runnable {
                 return true;
             case "CONNECT":
                 login(parameter);
-                break;
+                return false;
             case "CREATE":
-                createFile((Archive) data);
-                break;
+                registerFile(parameter);
+                return true;
             case "READ":
                 readFile(parameter);
-                break;
+                return true;
             case "WRITE":
-                writeFile(parameter);
-                break;
+                writeFile(data);
+                return true;
             case "ERASE":
                 eraseFile(parameter);
                 break;
-            case "PREPARECREATE":
-                registerFile(parameter);
-                break;
             case "WHEREISFILE":
                 locateFile(parameter);
-                break;
+                return true;
             case "PREPAREERASE":
                 unregisterFile(parameter);
-                break;
+                return true;
             case "WHEREISMASTER":
                 whereismaster();
                 return true;
@@ -80,31 +76,24 @@ public class ClientRequestManager implements Runnable {
 
     private void login(String parameter) {
         login = parameter;
-        messenger.send(" Client " + login + " successfully connected to server.");
-    }
-
-    private void createFile(Archive archive) {
-        System.out.println("CREATE A FILE");
-        System.out.println(login + "/" + archive.getFileName());
-        memory.write("mem_tmp", login + "/" + archive.getFileName(), archive);
-        messenger.send(archive.getFileName() + " written in the memory");
     }
 
     private void readFile(String fileName) {
         System.out.println("READ A FILE");
         System.out.println(login + "/" + fileName);
-        Archive archive = memory.read("mem_tmp", login + "/" + fileName);
+        Archive archive = Server.dataNode.memory.mem.get(login + "/" + fileName);
         messenger.send(new DataContainer("FILE", archive));
     }
 
-    private void writeFile(String parameter) {
-        messenger.send("This command is not functional yet.");
+    private void writeFile(Data data) {
+        Server.dataNode.writeMultiple(data, login);
+        messenger.close();
     }
 
     private void eraseFile(String fileName) {
         System.out.println("ERASE A FILE");
         System.out.println(login + "/" + fileName);
-        Archive archive = memory.delete("mem_tmp", login + "/" + fileName);
+        Archive archive = Server.dataNode.memory.delete("mem_tmp", login + "/" + fileName);
         if (archive == null)
             messenger.send(fileName + " does not exist in the memory");
         else messenger.send(archive.getFileName() + " erased from the memory");
@@ -162,8 +151,8 @@ public class ClientRequestManager implements Runnable {
 
     private void whereismaster() {
         DataContainer resp;
-        int masterPort = Config.getInstance().getMaster().getClientPort();
-        resp = new DataContainer("MASTERISAT", String.valueOf(masterPort));
+        int masterId = Config.getInstance().getMaster().getId();
+        resp = new DataContainer("MASTERIS", String.valueOf(masterId));
         messenger.send(resp);
         messenger.close();
     }

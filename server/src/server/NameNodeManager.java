@@ -92,6 +92,9 @@ public class NameNodeManager extends Thread {
         }
     }
 
+    /**
+     * testing method
+     */
     public void update() {
         HashMap<Integer, ServerData> list;
         list = Config.getInstance().getServerList();

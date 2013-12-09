@@ -145,6 +145,7 @@ public class NameNode extends Thread {
     public void deliver(String parameter) {
         if (theTmpNode.containsKey(parameter)) {
             theNode.put(parameter, theTmpNode.get(parameter));
+            theTmpNode.remove(parameter);
         }
         if (verbose) {
             System.out.println("NameNode deliver \"" + parameter + "\"");

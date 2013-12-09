@@ -21,30 +21,21 @@ public class EntryFormatter {
         if (entry.length == 2) {
             String command = entry[0].toUpperCase();
             switch (command) {
-                case "PREPARECREATE":
-                    return new DataContainer(command, entry[1]);
-                case "WHEREISFILE":
-                    return new DataContainer(command, entry[1]);
-                case "PREPAREERASE":
-                    return new DataContainer(command, entry[1]);
                 case "CREATE":
+                    return new DataContainer(command, entry[1]);
                 case "WRITE":
-                {
-                    String fileName = entry[1];
-                    try {
-                        Archive archive = FileConverterArchive.getArchiveFromFile(fileName);
-                    } catch (IOException e) {
-                        return null;
-                    }
-                }
+                    return new DataContainer(command, entry[1]);
                 case "READ":
-                {
-                    String fileName = entry[1];
-                    return new DataContainer(command, fileName);
-                }
+                    return new DataContainer(command, entry[1]);
+                case "DELETE":
+                    return new DataContainer(command, entry[1]);
             }
         } else if (entry.length == 1) {
-            return new DataContainer(entry[0].toUpperCase());
+            String command = entry[0].toUpperCase();
+            switch (command) {
+                case "EXIT":
+                    return new DataContainer("EXIT");
+            }
         }
         return null;
     }

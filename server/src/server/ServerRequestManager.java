@@ -78,11 +78,20 @@ public class ServerRequestManager implements Runnable {
         } else if (command.equals("GIVEMEMYNAMENODE")
                 && (Config.getInstance().getStatut() == Status.SECONDARY
                 || Config.getInstance().IamTheMaster())) {
-            data.NameNode masterNameNode = 
-                    new data.NameNode(Server.nameNode.getTheNode());
-            DataContainer resp = new DataContainer("WRITEAT", 
-                    (Data)masterNameNode);
+            data.NameNode masterNameNode
+                    = new data.NameNode(Server.nameNode.getTheNode());
+            DataContainer resp = new DataContainer("WRITEAT",
+                    (Data) masterNameNode);
             messenger.send(resp);
+            messenger.close();
+            return true;
+        } else if (command.equals("WRITEOK")
+                && Config.getInstance().IamTheMaster()) {
+            messenger.send("DELIVER");
+            messenger.close();
+            return true;
+        } else if (command.equals("WRITE")) {
+            Server.dataNode.writeSimple(data, parameter);
             messenger.close();
             return true;
         } else {

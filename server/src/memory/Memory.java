@@ -5,8 +5,8 @@ import java.util.*;
 
 public class Memory {
 
-    private static HashMap<String, Archive> mem;
-    private static HashMap<String, Archive> mem_tmp;
+    public HashMap<String, Archive> mem;
+    public HashMap<String, Archive> mem_tmp;
 
     public Memory() {
         mem = new HashMap<>();
