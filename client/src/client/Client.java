@@ -48,13 +48,6 @@ public class Client {
         DataContainer command = entryFormatter.getLogin();
         login = command.getDescription();
         Client user = new Client(host, port);
-        int attempts = 0;
-        while(!user.isConnected() && attempts <= 5) {
-            attempts++;
-            System.out.println("Trying to connect to our servers.");
-            TimeUnit.SECONDS.sleep(5);
-            user = new Client(host, port);
-        }
         
         if (user.isConnected()) {
             boolean connexionHasFinished = user.execute(command);

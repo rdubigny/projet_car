@@ -156,7 +156,7 @@ public class ClientRequestManager implements Runnable {
     }
 
     private void finishConnection() {
-        messenger.send("Connexion was finished.");
+        messenger.send("Connection was finished.");
         messenger.close();
     }
 
