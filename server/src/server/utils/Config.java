@@ -99,6 +99,10 @@ public class Config {
         }
     }
 
+    /**
+     * 
+     * @return master ServerData if there is one, else null
+     */
     public ServerData getMaster() {
         if (this.masterId == -1) {
             return null;

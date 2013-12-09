@@ -67,6 +67,9 @@ public class ClientRequestManager implements Runnable {
             case "PREPAREERASE":
                 unregisterFile(parameter);
                 break;
+            case "WHEREISMASTER":
+                whereismaster();
+                return true;
             default:
                 messenger.send("Unknown command. Try: create, read, write, erase or quit.");
                 break;
@@ -130,9 +133,14 @@ public class ClientRequestManager implements Runnable {
 
     private void locateFile(String parameter) {
         if (Config.getInstance().IamTheMaster()) {
-            Server.nameNodeManager.getIds(parameter);
-            // if ids == null error!
-            messenger.send("WRITEAT");
+            IdList idList;
+            idList = Server.nameNode.getIds(parameter);
+            if (idList == null){
+                messenger.send("Internal error. The file may not exists."); 
+            } else {
+                DataContainer resp = new DataContainer("WRITEAT", (Data)idList);
+                messenger.send(resp);
+            }
         } else {
             messenger.send("Internal Error");
         }
@@ -141,6 +149,7 @@ public class ClientRequestManager implements Runnable {
     private void unregisterFile(String parameter) {
         if (Config.getInstance().IamTheMaster()) {
             Server.nameNodeManager.unregister(parameter);
+            messenger.send("OK"); 
         } else {
             messenger.send("Internal Error");
         }
@@ -148,6 +157,14 @@ public class ClientRequestManager implements Runnable {
 
     private void finishConnection() {
         messenger.send("Connexion was finished.");
+        messenger.close();
+    }
+
+    private void whereismaster() {
+        DataContainer resp;
+        int masterPort = Config.getInstance().getMaster().getClientPort();
+        resp = new DataContainer("MASTERISAT", String.valueOf(masterPort));
+        messenger.send(resp);
         messenger.close();
     }
 }

@@ -26,7 +26,24 @@ public class Client {
     }
     
     /* method */
-    private static void run(String host, int port) throws InterruptedException {
+    private static void run(String tmpHost, int tmpPort) throws InterruptedException {
+        String host = tmpHost; // change to new ip adress
+        int port = 0; 
+        while(port == 0){
+            try {
+                Messenger messenger = new Messenger(new Socket(tmpHost, tmpPort));
+                messenger.send("WHEREISMASTER");
+                DataContainer resp = messenger.receive();
+                messenger.close();
+                if (resp.getContent().equals("MASTERISAT")){
+                    port = Integer.parseInt(resp.getDescription());
+                    continue;
+                }
+            } catch (IOException e) {
+                System.out.println("Unable to find master\n");
+            }
+            TimeUnit.SECONDS.sleep(5);            
+        }
         System.out.println("\nWelcome to your shared file system!");
         DataContainer command = entryFormatter.getLogin();
         login = command.getDescription();

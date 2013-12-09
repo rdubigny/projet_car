@@ -6,6 +6,7 @@
 
 package server;
 
+import data.IdList;
 import java.util.HashMap;
 import java.util.List;
 import server.utils.Config;
@@ -73,5 +74,18 @@ public class NameNode extends Thread {
             theNode.put(parameter, theTmpNode.get(parameter));            
         }
         if (verbose) System.out.println("NameNode deliver \""+parameter+"\"");
+    }
+
+    public IdList getIds(String parameter) {
+        if (theNode.containsKey(parameter)){
+            IdList idList = new IdList();
+            idList.list.addAll(theNode.get(parameter));
+            return idList;
+        }
+        return null;
+    }
+
+    void delete(String parameter) {
+        theNode.remove(parameter);
     }
 }

@@ -23,6 +23,10 @@ public class EntryFormatter {
             switch (command) {
                 case "PREPARECREATE":
                     return new DataContainer(command, entry[1]);
+                case "WHEREISFILE":
+                    return new DataContainer(command, entry[1]);
+                case "PREPAREERASE":
+                    return new DataContainer(command, entry[1]);
                 case "CREATE":
                 case "WRITE":
                 {

@@ -19,6 +19,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
 import server.utils.Config;
 import server.utils.ServerData;
 import server.utils.Status;
@@ -31,14 +33,19 @@ public class NameNodeManager extends Thread {
 
     private final boolean verbose;
     private final ExecutorService executor;
-    private final Object lock;
+    private final Object searchSecondaryLock;
+    private final Object RegisterLock;
+    private final Object allHaveRespLock;
+    private int respCounter;
 
     /**
      *
      * @param verbose
      */
     public NameNodeManager(boolean verbose) {
-        this.lock = new Object();
+        this.searchSecondaryLock = new Object();
+        this.RegisterLock = new Object();
+        this.allHaveRespLock = new Object();
         executor = Executors.newCachedThreadPool();
         this.verbose = verbose;
     }
@@ -131,7 +138,7 @@ public class NameNodeManager extends Thread {
         int id;
         // if to many servers are down, the loop will run for ever
         // to prevent that we introduce maxTries
-        int maxTries = Server.K*100;
+        int maxTries = Server.K * 100;
         do {
             id = (int) (Math.random() * (size + 1)); // +1 for this server
             if (!idList.list.contains(id)) {
@@ -146,45 +153,83 @@ public class NameNodeManager extends Thread {
             }
             maxTries--;
         } while (idList.list.size() < Server.K + 1 && maxTries > 0);
-        if (idList.list.size() < Server.K + 1){
+        if (idList.list.size() < Server.K + 1) {
             idList.list.clear();
             return idList;
         } else {
-            int port = Config.getInstance().getServerList().get(2).getServerPort();
-            InetAddress address = Config.getInstance().getServerList().get(2).getAddress();
-            Messenger messenger;
+            IdList returnValue = null;
+            synchronized (RegisterLock) {
+                DataContainer resp = new DataContainer("CREATEUPDATE", parameter, (Data) idList);
+                this.respCounter = Server.K + 1;
+                HashMap<Integer, ServerData> list;
+                list = Config.getInstance().getServerList();
+                Iterator<Integer> itr;
+                itr = list.keySet().iterator();
+                while (itr.hasNext()) {
+                    Integer key = itr.next();
+                    ServerData value;
+                    value = list.get(key);
+                    if (value.getStatus() == Status.SECONDARY) {
+                        executor.submit(new registerThread(value.getAddress(),
+                                value.getServerPort(), resp));
+                    }
+                }
+                executor.submit(new registerThread(
+                        Config.getInstance().getThisServer().getAddress(),
+                        Config.getInstance().getThisServer().getServerPort(),
+                        resp));                
+                synchronized (allHaveRespLock) {
+                    try {
+                        allHaveRespLock.wait(3 * 1000);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace(System.out);
+                    }
+                    if (respCounter <= 0) {
+                        returnValue = idList;
+                    }
+                }
+            }
+            return returnValue;
+        }
+    }
+
+    private class registerThread extends Thread {
+
+        private final InetAddress addr;
+        private final int port;
+        private final DataContainer resp;
+
+        public registerThread(InetAddress addr, int port, DataContainer resp) {
+            this.addr = addr;
+            this.port = port;
+            this.resp = resp;
+        }
+
+        @Override
+        public void run() {
             try {
-                messenger = new Messenger(new Socket(address, port));
-                // if the server was found, keep going                
-                DataContainer resp = new DataContainer("CREATEUPDATE", parameter, (Data)idList);
+                Messenger messenger = new Messenger(new Socket(addr, port));
+                // if the server was found, keep going
                 messenger.send(resp);
                 DataContainer request = messenger.receive();
                 String content = request.getContent();
                 if (content.equals("OK")) {
                     messenger.send("DELIVER");
                     messenger.close();
-                    return idList;
-                } else if (content.equals("KO")){
+                    synchronized (allHaveRespLock) {
+                        respCounter--;
+                        if (respCounter <= 0) {
+                            allHaveRespLock.notify();
+                        }
+                    }
+                } else if (content.equals("KO")) {
                     messenger.close();
-                    return null;
                 }
             } catch (IOException ex) {
                 ex.printStackTrace(System.out);
-                idList.list.clear();
-                return idList;
             }
         }
-        return null;
-    }
 
-    /**
-     * send back the data servers ids (if the file is written)
-     *
-     * @param parameter
-     */
-    void getIds(String parameter
-    ) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     /**
@@ -192,13 +237,55 @@ public class NameNodeManager extends Thread {
      *
      * @param parameter
      */
-    void unregister(String parameter
-    ) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    void unregister(String parameter) {
+        DataContainer resp = new DataContainer("REMOVEUPDATE", parameter);
+        HashMap<Integer, ServerData> list;
+        list = Config.getInstance().getServerList();
+        Iterator<Integer> itr;
+        itr = list.keySet().iterator();
+        while (itr.hasNext()) {
+            Integer key = itr.next();
+            ServerData value;
+            value = list.get(key);
+            if (value.getStatus() == Status.SECONDARY) {
+                executor.submit(new unRegisterThread(value.getAddress(),
+                        value.getServerPort(), resp));
+            }
+        }
+        executor.submit(new unRegisterThread(
+                Config.getInstance().getThisServer().getAddress(),
+                Config.getInstance().getThisServer().getServerPort(),
+                resp));   
+    }
+
+    private class unRegisterThread extends Thread {
+
+        private final InetAddress addr;
+        private final int port;
+        private final DataContainer resp;
+
+        public unRegisterThread(InetAddress addr, int port, DataContainer resp) {
+            this.addr = addr;
+            this.port = port;
+            this.resp = resp;
+        }
+
+        @Override
+        public void run() {
+            try {
+                Messenger messenger = new Messenger(new Socket(addr, port));
+                // if the server was found, keep going
+                messenger.send(resp);
+                messenger.close();
+            } catch (IOException ex) {
+                ex.printStackTrace(System.out);
+            }
+        }
     }
 
     public void electNewSecondary(int secDown) {
         executor.submit(new electNewSecondaryThread(secDown));
+
     }
 
     private class electNewSecondaryThread implements Runnable {
@@ -216,7 +303,7 @@ public class NameNodeManager extends Thread {
                     System.out.println("looking for "
                             + this.secondaryToFound + " secondary...");
                 }
-                synchronized (lock) {
+                synchronized (searchSecondaryLock) {
                     HashMap<Integer, ServerData> list;
                     list = Config.getInstance().getServerList();
                     Iterator<Integer> itr;

@@ -159,32 +159,30 @@ public class BuddyManager extends Thread {
                                 ex.printStackTrace(System.out);
                             }
                             sleep(consideredDeadAfter * 1000);
-                            if (statusTable.contains(Status.DOWN)) {
-                                int SecDown = 0;
-                                Iterator<Integer> itr;
-                                itr = statusTable.keySet().iterator();
-                                
-                                // record the down servers if necessary
-                                while (itr.hasNext()) {
-                                    Integer key = itr.next();
-                                    Status newSt, oldSt;
-                                    newSt = statusTable.get(key);
-                                    oldSt = Config.getInstance().getServerList().get(key).getStatus();
-                                    //System.out.println(key+" is "+newSt+" and was "+oldSt);
-                                    if (newSt == Status.DOWN && newSt != oldSt) {
-                                        if (verbose) {
-                                            System.out.println("server" + key + " went DOWN!");
-                                        }
-                                        Config.getInstance().getServerList().
-                                                get(key).setStatus(Status.DOWN);
-                                        if (oldSt == Status.SECONDARY) {
-                                            SecDown++;
-                                        }
+                            int SecDown = 0;
+                            Iterator<Integer> itr;
+                            itr = statusTable.keySet().iterator();
+
+                            // record the down servers if necessary
+                            while (itr.hasNext()) {
+                                Integer key = itr.next();
+                                Status newSt, oldSt;
+                                newSt = statusTable.get(key);
+                                oldSt = Config.getInstance().getServerList().get(key).getStatus();
+                                //System.out.println(key+" is "+newSt+" and was "+oldSt);
+                                if (newSt == Status.DOWN && oldSt != newSt) {
+                                    if (verbose) {
+                                        System.out.println("server" + key + " went DOWN!");
                                     }
+                                    if (oldSt == Status.SECONDARY) {
+                                        SecDown++;
+                                    }
+                                    Config.getInstance().getServerList().
+                                            get(key).setStatus(Status.DOWN);
                                 }
-                                if (SecDown > 0) {
-                                    Server.nameNodeManager.electNewSecondary(SecDown);
-                                }
+                            }
+                            if (SecDown > 0) {
+                                Server.nameNodeManager.electNewSecondary(SecDown);
                             }
                         }
                     }
@@ -375,9 +373,12 @@ public class BuddyManager extends Thread {
                     executor.submit(new answer("COORDINATOR", remoteAddr,
                             remotePort));
                     int id = Integer.parseInt(msg.substring(6).trim());
-                    Status st = Config.getInstance().getServerList().get(id).getStatus();
                     Config.getInstance().getServerList().get(id).setStatus(
                             Status.DATA);
+                    // if the server have just connected and missed the UP 
+                    // message then he will be considered dead
+                    // we must enter a value in statusTable for this case
+                    statusTable.put(id, Status.DATA);
                 } else if (msg.startsWith("UP")
                         && !Config.getInstance().IamTheMaster()) {
                     String resp = "UP "

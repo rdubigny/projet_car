@@ -68,6 +68,12 @@ public class ServerRequestManager implements Runnable {
                 messenger.close();
             }
             return true;
+        } else if (command.equals("REMOVEUPDATE")
+                && (Config.getInstance().getStatut() == Status.SECONDARY
+                || Config.getInstance().IamTheMaster())) {
+            Server.nameNode.delete(parameter);
+            messenger.close();
+            return true;
         } else {
             messenger.send("Unknown message!");
         }
