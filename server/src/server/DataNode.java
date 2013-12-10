@@ -29,11 +29,11 @@ public class DataNode extends Thread {
 
     @Override
     public void run() {
-        while (true) {
-            if (this.verbose) {
-                System.out.println("DataNode: I'm alive");
-            }
-        }
+    }
+
+    void copyTo(int id, String fileName) {
+        Archive archive = memory.mem.get(fileName);
+        executor.submit(new writeMultipleThread((Data)archive, "memory", id));
     }
 
     void writeMultiple(Data data, String login) {

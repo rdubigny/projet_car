@@ -4,6 +4,7 @@
  */
 package server;
 
+import data.Archive;
 import data.Data;
 import data.DataContainer;
 import data.IdList;
@@ -51,6 +52,18 @@ public class ServerRequestManager implements Runnable {
             return true;
         } else if (command.equals("SECONDARY")) {
             Config.getInstance().setStatus(Status.SECONDARY);
+            messenger.close();
+            return true;
+        } else if (command.equals("REMOVEID")) {
+            int id = Integer.parseInt(parameter);
+            Server.nameNode.removeId(id);
+            messenger.close();
+            return true;
+        } else if (command.equals("COPYTO")) {
+            int id = Integer.parseInt(parameter);            
+            Archive archive = (Archive)data;
+            String fileName = archive.getFileName();
+            Server.dataNode.copyTo(id, fileName);
             messenger.close();
             return true;
         } else if (command.equals("CREATEUPDATE")

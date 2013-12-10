@@ -40,6 +40,14 @@ public class NameNode extends Thread {
     public HashMap<String, List> getTheNode() {
         return theNode;
     }
+    
+    public void removeId(int id){
+        for (Map.Entry<String, List> entry : theNode.entrySet()) {
+            String string = entry.getKey();
+            List list = entry.getValue();
+            list.remove(id);            
+        }
+    }
 
     @Override
     public void run() {

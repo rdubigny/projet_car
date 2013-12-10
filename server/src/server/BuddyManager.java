@@ -179,6 +179,7 @@ public class BuddyManager extends Thread {
                                     }
                                     Config.getInstance().getServerList().
                                             get(key).setStatus(Status.DOWN);
+                                    Server.dataNodeManager.copyData(key);
                                 }
                             }
                             if (SecDown > 0) {

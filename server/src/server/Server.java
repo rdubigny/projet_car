@@ -52,11 +52,11 @@ public class Server {
             serverListener.start();
             System.out.println("Now listening to server requests...");
             
-            dataNodeManager = new DataNodeManager(false);
-            //dataNodeManager.start();
+            dataNodeManager = new DataNodeManager(true);
+            dataNodeManager.start();
             System.out.println("dataNodeManager launched!");
-            dataNode = new DataNode(false);
-            //dataNode.start();
+            dataNode = new DataNode(true);
+            dataNode.start();
             System.out.println("dataNode launched!");
             ConnectionListener clientListener = new ConnectionListener(false);
             clientListener.start();
