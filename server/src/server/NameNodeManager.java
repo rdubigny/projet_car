@@ -15,12 +15,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Lock;
 import server.utils.Config;
 import server.utils.ServerData;
 import server.utils.Status;
@@ -37,6 +33,7 @@ public class NameNodeManager extends Thread {
     private final Object RegisterLock;
     private final Object allHaveRespLock;
     private int respCounter;
+    private final Object activateNameNodeManager;
 
     /**
      *
@@ -48,58 +45,22 @@ public class NameNodeManager extends Thread {
         this.allHaveRespLock = new Object();
         executor = Executors.newCachedThreadPool();
         this.verbose = verbose;
+        this.activateNameNodeManager = new Object();
     }
 
     @Override
     public void run() {
-        while (true) {
-            synchronized (Config.getInstance().lockStatus) {
-                try {
-                    Config.getInstance().lockStatus.wait();
-                    // TODO if the server was DATA and became master then we need a copy from secondary
-                    // if this server just became upgraded to master status
-                    // it has to check launch secondary election if needed.
-                    if (Config.getInstance().IamTheMaster()) {
-                        // we have to wait here because this server must learn 
-                        // the servers status first
-                        sleep(2 * 1000);
-                        // now count all recorded secondary and launch an election if needed
-                        if (verbose) {
-                            System.out.println("NameNodeManager activated!");
-                        }
-                        int nbSec = 0;
-                        HashMap<Integer, ServerData> list;
-                        list = Config.getInstance().getServerList();
-                        Iterator<Integer> itr;
-                        itr = list.keySet().iterator();
-                        while (itr.hasNext()) {
-                            Integer key = itr.next();
-                            ServerData value;
-                            value = list.get(key);
-                            if (value.getStatus() == Status.SECONDARY) {
-                                nbSec++;
-                            }
-                        }
-                        // if there is not enought secondary, launch an election
-                        if (nbSec < Server.K) {
-                            this.electNewSecondary(Server.K - nbSec);
-                        }
-                    }
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace(System.out);
-                }
-            }
-        }
     }
 
     /**
-     * testing method
+     * make sure they are enough secondary servers. If not, launch new secondary
+     * election.
      */
-    public void update() {
+    void check() {
+        if (verbose) System.out.println("NameNodeManager: check");
+        int nbSec = 0;
         HashMap<Integer, ServerData> list;
         list = Config.getInstance().getServerList();
-        int id;
-        id = (int) Math.round(Math.random() * (double) (list.size() - 1));
         Iterator<Integer> itr;
         itr = list.keySet().iterator();
         while (itr.hasNext()) {
@@ -107,33 +68,81 @@ public class NameNodeManager extends Thread {
             ServerData value;
             value = list.get(key);
             if (value.getStatus() == Status.SECONDARY) {
+                nbSec++;
             }
         }
-        int port = Config.getInstance().getServerList().get(2).getServerPort();
-        InetAddress address = Config.getInstance().getServerList().get(2).getAddress();
-        try {
-            Messenger messenger = new Messenger(new Socket(address, port));
-            messenger.send("UPDATE");
-            // TODO send updated nameNode
-            messenger.send("OK");
-            DataContainer request = messenger.receive();
-            String content = request.getContent();
-            if (content.equals("OK")) {
-                messenger.send("DELIVER");
-                messenger.close();
+        // if there is not enought secondary, launch an election
+        if (nbSec < Server.K) {
+            this.electNewSecondary(Server.K - nbSec);
+        }
+    }
+
+    public void electNewSecondary(int secDown) {
+        executor.submit(new electNewSecondaryThread(secDown));
+
+    }
+
+    private class electNewSecondaryThread implements Runnable {
+
+        int secondaryToFound;
+
+        private electNewSecondaryThread(int secDown) {
+            this.secondaryToFound = secDown;
+        }
+
+        @Override
+        public void run() {
+            if (verbose) {
+                System.out.println("NameNodeManager: looking for "
+                        + this.secondaryToFound + " secondary...");
             }
-        } catch (IOException ex) {
-            ex.printStackTrace(System.out);
+            synchronized (searchSecondaryLock) {
+                HashMap<Integer, ServerData> list;
+                list = Config.getInstance().getServerList();
+                Iterator<Integer> itr;
+                itr = list.keySet().iterator();
+                while (itr.hasNext() && this.secondaryToFound > 0) {
+                    Integer key = itr.next();
+                    ServerData value;
+                    value = list.get(key);
+                    if (value.getStatus() == Status.DATA) {
+                        if (verbose) {
+                            System.out.println("NameNodeManager: new secondaryfound: " + key);
+                        }
+                        this.secondaryToFound--;
+                        try {
+                            Messenger messenger;
+                            messenger = new Messenger(
+                                    new Socket(value.getAddress(),
+                                            value.getServerPort()));
+                            messenger.send("SECONDARY");
+                            value.setStatus(Status.SECONDARY);
+                            messenger.close();
+                        } catch (IOException ex) {
+                            ex.printStackTrace(System.out);
+                        }
+                    }
+                }
+            }
+            if (verbose) {
+                if (this.secondaryToFound == 0) {
+                    System.out.println("NameNodeManager: All secondary have been found");
+                } else {
+                    System.out.println("NameNodeManager: " + this.secondaryToFound
+                            + " secondary are still missing");
+                }
+            }
         }
     }
 
     /**
-     * register the new file name as written=false
+     * Find eligible server to store the file. Register it on all nameNode.
      *
      * @param parameter
      * @return
      */
     public IdList register(String parameter) {
+        if (verbose) System.out.println("NameNodeManager: register "+parameter);
         IdList idList = new IdList();
         int size = Config.getInstance().getServerList().size();
         int thisId = Config.getInstance().getThisServer().getId();
@@ -180,7 +189,7 @@ public class NameNodeManager extends Thread {
                 executor.submit(new registerThread(
                         Config.getInstance().getThisServer().getAddress(),
                         Config.getInstance().getThisServer().getServerPort(),
-                        resp));                
+                        resp));
                 synchronized (allHaveRespLock) {
                     try {
                         allHaveRespLock.wait(3 * 1000);
@@ -196,6 +205,9 @@ public class NameNodeManager extends Thread {
         }
     }
 
+    /**
+     * write in remote nameNode
+     */
     private class registerThread extends Thread {
 
         private final InetAddress addr;
@@ -241,6 +253,7 @@ public class NameNodeManager extends Thread {
      * @param parameter
      */
     void unregister(String parameter) {
+        if (verbose) System.out.println("NameNodeManager: unregister "+parameter);
         DataContainer resp = new DataContainer("REMOVEUPDATE", parameter);
         HashMap<Integer, ServerData> list;
         list = Config.getInstance().getServerList();
@@ -258,7 +271,7 @@ public class NameNodeManager extends Thread {
         executor.submit(new unRegisterThread(
                 Config.getInstance().getThisServer().getAddress(),
                 Config.getInstance().getThisServer().getServerPort(),
-                resp));   
+                resp));
     }
 
     private class unRegisterThread extends Thread {
@@ -284,65 +297,5 @@ public class NameNodeManager extends Thread {
                 ex.printStackTrace(System.out);
             }
         }
-    }
-
-    public void electNewSecondary(int secDown) {
-        executor.submit(new electNewSecondaryThread(secDown));
-
-    }
-
-    private class electNewSecondaryThread implements Runnable {
-
-        int secondaryToFound;
-
-        private electNewSecondaryThread(int secDown) {
-            this.secondaryToFound = secDown;
-        }
-
-        @Override
-        public void run() {
-            while (this.secondaryToFound > 0) { // will run until enought secondary are found
-                if (verbose) {
-                    System.out.println("looking for "
-                            + this.secondaryToFound + " secondary...");
-                }
-                synchronized (searchSecondaryLock) {
-                    HashMap<Integer, ServerData> list;
-                    list = Config.getInstance().getServerList();
-                    Iterator<Integer> itr;
-                    itr = list.keySet().iterator();
-                    while (itr.hasNext() && this.secondaryToFound > 0) {
-                        Integer key = itr.next();
-                        ServerData value;
-                        value = list.get(key);
-                        if (value.getStatus() == Status.DATA) {
-                            if (verbose) {
-                                System.out.println("New secondaryfound: " + key);
-                            }
-                            this.secondaryToFound--;
-                            try {
-                                Messenger messenger;
-                                messenger = new Messenger(
-                                        new Socket(value.getAddress(),
-                                                value.getServerPort()));
-                                messenger.send("SECONDARY");
-                                value.setStatus(Status.SECONDARY);
-                                messenger.close();
-                            } catch (IOException ex) {
-                                ex.printStackTrace(System.out);
-                            }
-                        }
-                    }
-                }
-                if (this.secondaryToFound > 0) {
-                    try {
-                        sleep(1000);
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace(System.out);
-                    }
-                }
-            }
-        }
-    }
-
+    }    
 }

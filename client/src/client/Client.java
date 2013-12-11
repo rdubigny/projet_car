@@ -148,14 +148,6 @@ public class Client {
                     return true;
                 }
                 IdList idList = (IdList) (respWrite.getData());
-                /*
-                String res = "";
-                for (int i = 0; i < idList.list.size(); i++) {
-                    int id = idList.list.get(i);
-                    res += id + ", ";
-                }
-                System.out.println(res);
-                */
                 try {
                     // Read in the bytes
                     InputStream is;
@@ -202,6 +194,7 @@ public class Client {
                 DataContainer commandRead2 = new DataContainer("READ", fileNameRead);
                 Messenger mesData;
                 try {
+                    System.out.println("File read at "+dataServerId);
                     mesData = new Messenger(new Socket(
                             Config.config.get(dataServerId).getIpAddress(),
                             Config.config.get(dataServerId).getClientPort()));
@@ -224,17 +217,20 @@ public class Client {
                 break;
             case "DELETE":
                 break;
+            // this one helps debuging
+            case "WHERE":
+                String fileNameWhere = command.getDescription();
+                DataContainer commandWhere = new DataContainer("WHEREISFILE",
+                        fileNameWhere);
+                messenger.send(commandWhere);
+                DataContainer respWhere = messenger.receive();
+                if (!respWhere.getContent().equals("WRITEAT")) {
+                    System.out.println("Unable to find remote file");
+                    return true;
+                }
+                IdList idListWhere = (IdList) (respWhere.getData());
+                System.out.println(fileNameWhere+" is at "+idListWhere.list.toString());
         }
-        /*
-         // client sends its command
-         messenger.send(command);
-         // client wait for a response
-         DataContainer received = messenger.receive();
-         // client treats datum 
-         treatment(received);
-         System.out.println(received.getContent());
-         return received.getContent().equals("Connection was finished.");
-         */
         return true;
     }
 

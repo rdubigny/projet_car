@@ -8,6 +8,7 @@ import java.io.Serializable;
 
 
 public class DataContainer implements Serializable {
+    private static final long serialVersionUID = 6529685098267757690L;
     /* attribute */
     private String content; 
     private String description;

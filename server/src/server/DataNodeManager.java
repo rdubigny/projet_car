@@ -7,6 +7,7 @@ import data.Messenger;
 import java.io.IOException;
 import static java.lang.Thread.sleep;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -32,17 +33,15 @@ public class DataNodeManager extends Thread {
     public void run() {
     }
 
-    public void copyData(int id) {
+    /**
+     * detect the down servers and make sure they are not in the nameNode
+     * anymore
+     */
+    public void check() {
         if (verbose) {
-            System.out.println("dataNodeManager.copyingData");
+            System.out.println("DataNodeManager: check");
         }
-        HashMap<String, List> oldNode = new HashMap<>();
-        oldNode.putAll(Server.nameNode.getTheNode());
-        Server.nameNode.removeId(id);
-        // remove id from all tables
-        if (verbose) {
-            System.out.println("cleaning tables...");
-        }
+        // detect the down servers
         HashMap<Integer, ServerData> list;
         list = Config.getInstance().getServerList();
         Iterator<Integer> itr;
@@ -51,97 +50,138 @@ public class DataNodeManager extends Thread {
             Integer key = itr.next();
             ServerData value;
             value = list.get(key);
-            if (value.getStatus() == Status.SECONDARY
-                    || value.getStatus() != Status.DATA) {
-                try {
-                    Messenger messenger;
-                    messenger = new Messenger(
-                            new Socket(value.getAddress(),
-                                    value.getServerPort()));
-                    DataContainer rq = new DataContainer("REMOVEID", String.valueOf(id));
-                    messenger.send(rq);
-                    messenger.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace(System.out);
-                }
+            if (value.getStatus() == Status.DOWN) {
+                // remove id from all nameNodes
+                this.removeId(key);
             }
         }
-
-        if (verbose) {
-            System.out.println("Launching thread...");
-        }
-        executor.submit(new copyDataThread(id, oldNode));
     }
 
-    private class copyDataThread implements Runnable {
-
-        int id;
-        HashMap<String, List> oldNode;
-
-        private copyDataThread(int id, HashMap<String, List> oldNode) {
-            this.id = id;
-            this.oldNode = oldNode;
+    public void removeId(int id) {
+        if (verbose) {
+            System.out.println("DataNodeManager: removeId ");
         }
-
-        @Override
-        public void run() {
+        if (Server.nameNode.removeId(id) == 0) {
             if (verbose) {
-                System.out.println("Launching thread...DONE");
+                System.out.println("DataNodeManager: removing " + id);
             }
-            List<String> entriesToRemove = new LinkedList<>();
-            entriesToRemove.clear();
-            for (Map.Entry<String, List> entry : oldNode.entrySet()) {
-                String fileName = entry.getKey();
-                List ids = entry.getValue();
-                if (!ids.contains(id)) {
-                    entriesToRemove.add(fileName);
+            HashMap<Integer, ServerData> list;
+            list = Config.getInstance().getServerList();
+            Iterator<Integer> itr;
+            itr = list.keySet().iterator();
+            while (itr.hasNext()) {
+                Integer key = itr.next();
+                ServerData value;
+                value = list.get(key);
+                if (value.getStatus() == Status.SECONDARY) {
+                    try {
+                        Messenger messenger;
+                        messenger = new Messenger(
+                                new Socket(value.getAddress(),
+                                        value.getServerPort()));
+                        DataContainer rq = new DataContainer("REMOVEID", String.valueOf(id));
+                        messenger.send(rq);
+                        messenger.close();
+                    } catch (IOException ex) {
+                        if (verbose) {
+                            System.out.println("DataNodeManager: a secondary seems dead");
+                        }
+                        ex.printStackTrace(System.out);
+                    }
                 }
             }
-            for (int i = 0; i < entriesToRemove.size(); i++) {
-                oldNode.remove(entriesToRemove.get(i));
-            }
-                // will run until all copy are done
-            // removing non concerned entries
+        }
+        this.copyLauncher();
+    }
+
+    public void addId(int id) {
+        if (verbose) {
+            System.out.println("DataNodeManager: addId ");
+        }
+        if (Server.nameNode.addId(id) == 0) {
             if (verbose) {
-                System.out.println("looking for copying " + this.oldNode.size() + " files...");
+                System.out.println("DataNodeManager: add " + id);
             }
-
-            for (Map.Entry<String, List> entry : oldNode.entrySet()) {
-                String fileName = entry.getKey();
-                List ids = entry.getValue();
-                boolean oneMoreFound = false;
-                while (!oneMoreFound) {
-                    HashMap<Integer, ServerData> list;
-                    list = Config.getInstance().getServerList();
-                    Iterator<Integer> itr;
-                    itr = list.keySet().iterator();
-                    while (itr.hasNext()) {
-                        Integer key = itr.next();
-                        ServerData value;
-                        value = list.get(key);
-                        if (value.getStatus() != Status.DOWN
-                                && (!ids.contains(key) || key == id)) {
-                            try {
-                                Messenger messenger;
-                                messenger = new Messenger(
-                                        new Socket(value.getAddress(),
-                                                value.getServerPort()));
-
-                                Archive archive = new Archive(fileName, null);
-                                DataContainer dataC;
-                                dataC = new DataContainer("COPYTO", String.valueOf(key), (Data) archive);
-                                messenger.send(dataC);
-                                messenger.close();
-                                oneMoreFound = true;
-                                break;
-                            } catch (IOException ex) {
-                                ex.printStackTrace(System.out);
-                            }
+            HashMap<Integer, ServerData> list;
+            list = Config.getInstance().getServerList();
+            Iterator<Integer> itr;
+            itr = list.keySet().iterator();
+            while (itr.hasNext()) {
+                Integer key = itr.next();
+                ServerData value;
+                value = list.get(key);
+                if (value.getStatus() == Status.SECONDARY) {
+                    try {
+                        Messenger messenger;
+                        messenger = new Messenger(
+                                new Socket(value.getAddress(),
+                                        value.getServerPort()));
+                        DataContainer rq = new DataContainer("ADDID", String.valueOf(id));
+                        messenger.send(rq);
+                        messenger.close();
+                    } catch (IOException ex) {
+                        if (verbose) {
+                            System.out.println("DataNodeManager: a secondary seems dead");
                         }
+                        ex.printStackTrace(System.out);
                     }
                 }
             }
         }
     }
 
+    private void copyLauncher() {
+        if (verbose) {
+            System.out.println("DataNodeManager: copyLauncher");
+        }
+        HashMap<String, List> theNode;
+        theNode = Server.nameNode.getTheNode();
+        Iterator<String> itr = theNode.keySet().iterator();
+        while (itr.hasNext()) {
+            String fileName = itr.next();
+            // if there is not enought copy of this file try to launch copying thread
+            if (theNode.get(fileName).size() <= Server.K) {
+                if (verbose) {
+                    System.out.println("DataNodeManager: copies are needed for " + fileName);
+                    this.findDataServerToCopy(fileName, theNode.get(fileName));
+                }
+            }
+        }
+    }
+
+    private void findDataServerToCopy(String fileName, List list) {
+        System.out.println("DataNodeManager: findDataServerToCopy");
+        // first select a data server amongst the servers available
+        Integer selectedServerId = null;
+        HashMap<Integer, ServerData> serverList = new HashMap<>();
+        serverList.putAll(Config.getInstance().getServerList());
+        serverList.put(Config.getInstance().getThisServer().getId(),
+                Config.getInstance().getThisServer());
+        Iterator<Integer> itr;
+        itr = serverList.keySet().iterator();
+        while (itr.hasNext() && selectedServerId == null) {
+            Integer key = itr.next();
+            ServerData value;
+            value = serverList.get(key);
+            if (value.getStatus() != Status.DOWN
+                    && !list.contains(key)) {
+                selectedServerId = new Integer(key);
+            }
+        }
+        if (verbose) {
+            if (selectedServerId != null) {
+                System.out.println("DataNodeManager: server " + selectedServerId
+                        + " sounds good for a copy of " + fileName);
+            } else {
+                System.out.println("DataNodeManager: no servers founds for copying " + fileName);
+            }
+        }
+        // if a server was found
+        if (selectedServerId != null) {
+            // register the copy
+            this.addId(selectedServerId);
+            // copy the file
+            Server.dataNode.copyTo(selectedServerId, fileName);
+        }
+    }
 }

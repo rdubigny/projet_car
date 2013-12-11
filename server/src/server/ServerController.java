@@ -1,5 +1,5 @@
 /*
- * ServerRequestManager is responsible for the interaction with a connected 
+ * ServerController is responsible for the interaction with a connected 
  * client. It receives the requests, executes them and send the answers back.
  */
 package server;
@@ -19,12 +19,12 @@ import server.utils.Status;
  *
  * @author scar
  */
-public class ServerRequestManager implements Runnable {
+public class ServerController implements Runnable {
 
     private final Messenger messenger;
     private final Thread thread;
 
-    ServerRequestManager(Socket serverSocket) {
+    ServerController(Socket serverSocket) {
         messenger = new Messenger(serverSocket);
         thread = new Thread(this);
         thread.start();
@@ -46,17 +46,19 @@ public class ServerRequestManager implements Runnable {
         String parameter = request.getDescription();
         Data data = request.getData();
 
-        if (command.equals("UPDATE")) {
-            update(parameter);
-            messenger.close();
-            return true;
-        } else if (command.equals("SECONDARY")) {
+        if (command.equals("SECONDARY")) {
             Config.getInstance().setStatus(Status.SECONDARY);
+            Server.nameNode.initializeTheNode();
             messenger.close();
             return true;
         } else if (command.equals("REMOVEID")) {
             int id = Integer.parseInt(parameter);
             Server.nameNode.removeId(id);
+            messenger.close();
+            return true;
+        } else if (command.equals("ADDID")) {
+            int id = Integer.parseInt(parameter);
+            Server.nameNode.addId(id);
             messenger.close();
             return true;
         } else if (command.equals("COPYTO")) {
@@ -112,17 +114,5 @@ public class ServerRequestManager implements Runnable {
         }
 
         return false;
-    }
-
-    private void update(String parameter) {
-        if (Server.nameNode.update() == 0) {
-            // TODO record updated nameNode
-            messenger.send("OK");
-            DataContainer request = messenger.receive();
-            String command = request.getContent();
-            if (command.equals("DELIVER")) {
-                // TODO put the temporary record in main memory
-            }
-        }
     }
 }

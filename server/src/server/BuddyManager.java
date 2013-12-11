@@ -25,7 +25,6 @@ import server.utils.Status;
  * @author car team 16
  */
 public class BuddyManager extends Thread {
-
     // class constants
     private final int checkEvery = 10; // time in second between 2 up check
     private final int consideredDeadAfter = 1; // time in second
@@ -142,50 +141,9 @@ public class BuddyManager extends Thread {
                         if (WaitingForMasterAnswer.get()) {
                             executor.submit(new propose());
                         }
-                    } else if (Config.getInstance().ThereIsAMaster()) {
+                    } else {
                         // check all servers liveness
-                        Set<Integer> keySet = Config.getInstance().getServerList().keySet();
-                        Iterator<Integer> keyItr = keySet.iterator();
-                        // we must ensure that propose is not modifying
-                        // statusTable in the same time
-                        synchronized(lockStatusTable){                       
-                            while (keyItr.hasNext()) {
-                                int key = keyItr.next();
-                                statusTable.put(key, Status.DOWN);
-                            }
-                            try {
-                                sendAll("UP");
-                            } catch (IOException ex) {
-                                ex.printStackTrace(System.out);
-                            }
-                            sleep(consideredDeadAfter * 1000);
-                            int SecDown = 0;
-                            Iterator<Integer> itr;
-                            itr = statusTable.keySet().iterator();
-
-                            // record the down servers if necessary
-                            while (itr.hasNext()) {
-                                Integer key = itr.next();
-                                Status newSt, oldSt;
-                                newSt = statusTable.get(key);
-                                oldSt = Config.getInstance().getServerList().get(key).getStatus();
-                                //System.out.println(key+" is "+newSt+" and was "+oldSt);
-                                if (newSt == Status.DOWN && oldSt != newSt) {
-                                    if (verbose) {
-                                        System.out.println("server" + key + " went DOWN!");
-                                    }
-                                    if (oldSt == Status.SECONDARY) {
-                                        SecDown++;
-                                    }
-                                    Config.getInstance().getServerList().
-                                            get(key).setStatus(Status.DOWN);
-                                    Server.dataNodeManager.copyData(key);
-                                }
-                            }
-                            if (SecDown > 0) {
-                                Server.nameNodeManager.electNewSecondary(SecDown);
-                            }
-                        }
+                        probe(false);
                     }
                 } catch (InterruptedException ex) {
                     ex.printStackTrace(System.out);
@@ -194,14 +152,48 @@ public class BuddyManager extends Thread {
         }
     }
 
+    private void probe(boolean isFirstCheck) {        
+        // we must ensure that two probe executions aren't launched in the same time
+        synchronized (lockStatusTable) {
+            // check all servers liveness
+            Set<Integer> keySet = Config.getInstance().getServerList().keySet();
+            Iterator<Integer> keyItr = keySet.iterator();
+            try {
+                while (keyItr.hasNext()) {
+                    int key = keyItr.next();
+                    statusTable.put(key, Status.DOWN);
+                }
+                try {
+                    sendAll("UP");
+                } catch (IOException ex) {
+                    ex.printStackTrace(System.out);
+                }
+                sleep(consideredDeadAfter * 1000);
+                Iterator<Integer> itr;
+                itr = statusTable.keySet().iterator();
+                // update the nameNode
+                while (itr.hasNext()) {
+                    Integer key = itr.next();
+                    Config.getInstance().getServerList().
+                            get(key).setStatus(statusTable.get(key));
+                }
+                // launch the checker                 
+                if (isFirstCheck) Server.nameNode.initializeTheNode();
+                Server.dataNodeManager.check();
+                Server.nameNodeManager.check();
+            } catch (InterruptedException ex) {
+                ex.printStackTrace(System.out);
+            }
+        }
+
+    }
+
     /**
      * this thread launches a vote
      */
     private class propose implements Runnable {
-
         public propose() {
         }
-
         @Override
         public void run() {
             if (!IamProposing.get()) {
@@ -216,39 +208,7 @@ public class BuddyManager extends Thread {
                         sendAll("COORDINATOR");
                         Config.getInstance().setMaster();
                         // now we need to learn the status
-                        // generate a new list of status
-                        Set<Integer> keySet = Config.getInstance().getServerList().keySet();
-                        Iterator<Integer> keyItr = keySet.iterator();
-                        // we must ensure that checkStatus is not modifying
-                        // statusTable in the same time
-                        synchronized(lockStatusTable){
-                            // mark all status as down
-                            while (keyItr.hasNext()) {
-                                int key = keyItr.next();
-                                statusTable.put(key, Status.DOWN);
-                            }
-                            // broadcast "up" to all so they send back their status
-                            try {
-                                sendAll("UP");
-                            } catch (IOException ex) {
-                                ex.printStackTrace(System.out);
-                            }
-                            try {
-                                sleep(consideredDeadAfter * 1000);
-                            } catch (InterruptedException ex) {
-                                ex.printStackTrace(System.out);
-                            }
-                            // update all status
-                            Iterator<Integer> itr;
-                            itr = statusTable.keySet().iterator();
-
-                            while (itr.hasNext()) {
-                                Integer key = itr.next();
-                                Status newSt = statusTable.get(key);
-                                Config.getInstance().getServerList().
-                                        get(key).setStatus(newSt);
-                            }
-                        }
+                        probe(true);
                     }
                 } catch (InterruptedException | IOException ex) {
                     ex.printStackTrace(System.out);

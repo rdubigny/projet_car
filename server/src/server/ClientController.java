@@ -1,22 +1,20 @@
 /*
- * ClientRequestManager is responsible for the interaction with a connected 
+ * ClientController is responsible for the interaction with a connected 
  * client. It receives the requests, executes them and send the answers back.
  */
 package server;
 
 import data.*;
-import memory.*;
 import java.net.Socket;
-import java.util.List;
 import server.utils.*;
 
-public class ClientRequestManager implements Runnable {
+public class ClientController implements Runnable {
 
     private final Messenger messenger;
     private final Thread thread;
     private String login;
 
-    ClientRequestManager(Socket clientSocket) {
+    ClientController(Socket clientSocket) {
         messenger = new Messenger(clientSocket);
         thread = new Thread(this);
         thread.start();
@@ -39,9 +37,6 @@ public class ClientRequestManager implements Runnable {
         String parameter = request.getDescription();
         Data data = request.getData();
         switch (command) {
-            case "QUIT":
-                finishConnection();
-                return true;
             case "CONNECT":
                 login(parameter);
                 return false;
@@ -93,7 +88,7 @@ public class ClientRequestManager implements Runnable {
     private void eraseFile(String fileName) {
         System.out.println("ERASE A FILE");
         System.out.println(login + "/" + fileName);
-        Archive archive = Server.dataNode.memory.delete("mem_tmp", login + "/" + fileName);
+        Archive archive = Server.dataNode.memory.mem.remove(login + "/" + fileName);
         if (archive == null)
             messenger.send(fileName + " does not exist in the memory");
         else messenger.send(archive.getFileName() + " erased from the memory");
@@ -110,7 +105,7 @@ public class ClientRequestManager implements Runnable {
             if (idList == null){
                 messenger.send("Internal error. The file may already exists.");                
             }else if (idList.list.isEmpty()){
-                messenger.send("Not enought server. Try again in a while.");
+                messenger.send("Not enough server. Try again in a while.");
             } else {
                 DataContainer resp = new DataContainer("WRITEAT", (Data)idList);
                 messenger.send(resp);

@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 import memory.Memory;
 import server.utils.Config;
 import server.utils.ServerData;
-import server.utils.Status;
 
 public class DataNode extends Thread {
 
@@ -32,18 +31,21 @@ public class DataNode extends Thread {
     }
 
     void copyTo(int id, String fileName) {
-        Archive archive = memory.mem.get(fileName);
-        executor.submit(new writeMultipleThread((Data)archive, "memory", id));
+        if (verbose) System.out.println("DataNode: "+fileName+" copyTo "+id);
+        Archive archive = memory.mem.get("memory/"+fileName);
+        System.out.println(archive);
+        executor.submit(new writeMultipleThread((Data) archive, "memory", id));
     }
 
     void writeMultiple(Data data, String login) {
+        if (verbose) System.out.println("DataNode: writeMultiple");
         ArchiveAndList fData = (ArchiveAndList) data;
         Archive archive = fData.archive;
         List<Integer> list = fData.list;
-        executor.submit(new writeSimpleThread((Data)archive, login));
+        executor.submit(new writeSimpleThread((Data) archive, login));
         for (int i = 0; i < list.size(); i++) {
             int id = list.get(i);
-            executor.submit(new writeMultipleThread((Data)archive, login, id));
+            executor.submit(new writeMultipleThread((Data) archive, login, id));
         }
     }
 
@@ -77,6 +79,7 @@ public class DataNode extends Thread {
     }
 
     void writeSimple(Data data, String login) {
+        if (verbose) System.out.println("DataNode: writeSimple");
         executor.submit(new writeSimpleThread(data, login));
     }
 
@@ -86,7 +89,7 @@ public class DataNode extends Thread {
         String login;
 
         public writeSimpleThread(Data data, String login) {
-            this.archive = (Archive)data;
+            this.archive = (Archive) data;
             this.login = login;
         }
 
@@ -102,19 +105,19 @@ public class DataNode extends Thread {
                         new Socket(master.getAddress(),
                                 master.getServerPort()));
                 DataContainer resp = new DataContainer("WRITEOK", login + "/" + archive.getFileName());
-                messenger.send(resp);                
+                messenger.send(resp);
                 DataContainer masterResp;
                 masterResp = messenger.receive();
-                if (masterResp == null){
+                if (masterResp == null) {
                     Server.dataNode.memory.mem_tmp.remove(login + "/" + archive.getFileName());
-                }else if (masterResp.getContent().equals("DELIVER")) {
+                } else if (masterResp.getContent().equals("DELIVER")) {
                     Server.dataNode.memory.mem.put(login + "/" + archive.getFileName(), archive);
                     Server.dataNode.memory.mem_tmp.remove(login + "/" + archive.getFileName());
                 }
                 messenger.close();
             } catch (IOException ex) {
                 ex.printStackTrace(System.out);
-            }            
+            }
         }
     }
 }

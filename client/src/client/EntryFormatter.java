@@ -29,6 +29,8 @@ public class EntryFormatter {
                     return new DataContainer(command, entry[1]);
                 case "DELETE":
                     return new DataContainer(command, entry[1]);
+                case "WHERE":
+                    return new DataContainer(command, entry[1]);
             }
         } else if (entry.length == 1) {
             String command = entry[0].toUpperCase();

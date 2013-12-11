@@ -46,9 +46,9 @@ public class ConnectionListener extends Thread {
         try {
             while (true) {
                 if (listenToServer) {
-                    new ServerRequestManager(this.ss.accept());
+                    new ServerController(this.ss.accept());
                 } else {
-                    new ClientRequestManager(this.ss.accept());
+                    new ClientController(this.ss.accept());
                 }
             }
         } catch (IOException ex) {

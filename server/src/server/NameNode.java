@@ -30,80 +30,99 @@ public class NameNode extends Thread {
     private HashMap<String, List> theNode;
 
     private HashMap<String, List> theTmpNode;
+    private boolean nodeIsInitializated;
 
     public NameNode(boolean verbose) {
         this.verbose = verbose;
         theNode = new HashMap<>();
         theTmpNode = new HashMap<>();
+        nodeIsInitializated = false;
+    }
+
+    @Override
+    public void run() {
     }
 
     public HashMap<String, List> getTheNode() {
         return theNode;
     }
-    
-    public void removeId(int id){
+
+    /**
+     *
+     * @param id
+     * @return 1 if this id wasn't found, if not return 0
+     */
+    public int removeId(int id) {
+        if (verbose) System.out.println("NameNode: removeId");
+        int res = 1;
         for (Map.Entry<String, List> entry : theNode.entrySet()) {
             String string = entry.getKey();
-            List list = entry.getValue();
-            list.remove(id);            
+            List<Integer> list = entry.getValue();
+            if (list.remove(new Integer(id))) {
+                if (verbose) System.out.println("NameNode: "+id+" removed");
+                res = 0;
+            }
         }
+        return res;
     }
 
-    @Override
-    public void run() {
-        while (true) {
-            synchronized (Config.getInstance().lockStatus) {
-                try {
-                    Status svgStatus = Config.getInstance().getStatut();
-                    Config.getInstance().lockStatus.wait();
-                    if (Config.getInstance().getStatut() == Status.SECONDARY
-                            && svgStatus == Status.DATA) {
+    int addId(int id) {
+        if (verbose) System.out.println("NameNode: addId");
+        int res = 1;
+        for (Map.Entry<String, List> entry : theNode.entrySet()) {
+            String string = entry.getKey();
+            List<Integer> list = entry.getValue();
+            if (!list.contains(new Integer(id))) {
+                list.add(new Integer(id));
+                if (verbose) System.out.println("NameNode: "+id+" added");
+                res = 0;
+            }
+        }
+        return res;
+    }
+
+    public void initializeTheNode() {
+        if (verbose) System.out.println("NameNode: initializeTheNode");
+        if (!nodeIsInitializated) {
+            this.nodeIsInitializated = true;
+            if (Config.getInstance().getStatut() == Status.SECONDARY) {
                         // if previous state was DATA we have to ask server for
-                        // is NameNode
+                // is NameNode
+                try {
+                    this.copyNameNodeFrom(
+                            Config.getInstance().getMaster().getAddress(),
+                            Config.getInstance().getMaster().getServerPort());
+                } catch (IOException ex) {
+                    ex.printStackTrace(System.out);
+                }
+            } else if (Config.getInstance().IamTheMaster()) {
+                // here we have to ask a secondary node since this one
+                // wasn't initialized
+                HashMap<Integer, ServerData> list;
+                list = Config.getInstance().getServerList();
+                Iterator<Integer> itr;
+                itr = list.keySet().iterator();
+                while (itr.hasNext()) {
+                    Integer key = itr.next();
+                    ServerData value;
+                    value = list.get(key);
+                    if (value.getStatus() == Status.SECONDARY) {
                         try {
-                            this.initializeTheNode(
-                                Config.getInstance().getMaster().getAddress(),
-                                Config.getInstance().getMaster().getServerPort());
+                            this.copyNameNodeFrom(value.getAddress(),
+                                    value.getServerPort());
+                            break;
                         } catch (IOException ex) {
                             ex.printStackTrace(System.out);
                         }
-                    } else if (Config.getInstance().IamTheMaster()
-                            && svgStatus == Status.DATA) {
-                        // here we have to ask a secondary node since this one
-                        // wasn't initialized
-                        // we have to wait here because this server must learn 
-                        // the servers status first
-                        sleep(2 * 1000);
-                        HashMap<Integer, ServerData> list;
-                        list = Config.getInstance().getServerList();
-                        Iterator<Integer> itr;
-                        itr = list.keySet().iterator();
-                        while (itr.hasNext()) {
-                            Integer key = itr.next();
-                            ServerData value;
-                            value = list.get(key);
-                            if (value.getStatus() == Status.SECONDARY) {
-                                try {
-                                    this.initializeTheNode(value.getAddress(),
-                                            value.getServerPort());
-                                    break;
-                                } catch (IOException ex) {
-                                    ex.printStackTrace(System.out);
-                                }
-                            }
-                        }
                     }
-                    if (verbose) {
-                        System.out.println("NameNode activated!");
-                    }
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace(System.out);
                 }
             }
         }
     }
 
-    private void initializeTheNode(InetAddress addr, int port) throws IOException {
+    private void copyNameNodeFrom(InetAddress addr, int port) throws IOException {
+        if (verbose) System.out.println("NameNode: copyNameNodeFrom "
+                +addr.getHostAddress()+":"+port);
         Messenger messenger;
         messenger = new Messenger(new Socket(addr, port));
         messenger.send("GIVEMEMYNAMENODE");
@@ -125,17 +144,8 @@ public class NameNode extends Thread {
         }
     }
 
-    /**
-     *
-     * @return zero if the process finished successfully
-     */
-    public int update() {
-        System.out.println("nameNode.update");
-        // TODO : update NameNode
-        return 0;
-    }
-
     public int create(String parameter, List<Integer> list) {
+        if (verbose) System.out.println("NameNode: create "+parameter);
         if (theNode.containsKey(parameter)) {
             return 1;
         }
@@ -161,6 +171,7 @@ public class NameNode extends Thread {
     }
 
     public IdList getIds(String parameter) {
+        if (verbose) System.out.println("NameNode: getIds "+parameter);
         if (theNode.containsKey(parameter)) {
             IdList idList = new IdList();
             idList.list.addAll(theNode.get(parameter));
@@ -170,6 +181,7 @@ public class NameNode extends Thread {
     }
 
     void delete(String parameter) {
+        if (verbose) System.out.println("NameNode: delete "+parameter);
         theNode.remove(parameter);
     }
 }
