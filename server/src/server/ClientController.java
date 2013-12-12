@@ -38,39 +38,34 @@ public class ClientController implements Runnable {
         Data data = request.getData();
         switch (command) {
             case "CONNECT":
-                login(parameter);
+                login = parameter;
+                System.out.println(login+" has connected");
                 return false;
             case "CREATE":
                 registerFile(parameter);
-                return true;
+                break;
             case "READ":
                 readFile(parameter);
-                return true;
+                break;
             case "WRITE":
                 writeFile(data);
-                return true;
+                break;
             case "ERASE":
                 eraseFile(parameter);
                 break;
             case "WHEREISFILE":
                 locateFile(parameter);
-                return true;
+                break;
             case "PREPAREERASE":
                 unregisterFile(parameter);
-                return true;
+                break;
             case "WHEREISMASTER":
                 whereismaster();
-                return true;
+                break;
             default:
-                messenger.send("Unknown command. Try: create, read, write, erase or quit.");
                 break;
         }
-
-        return false;
-    }
-
-    private void login(String parameter) {
-        login = parameter;
+        return true;
     }
 
     private void readFile(String fileName) {
@@ -81,7 +76,7 @@ public class ClientController implements Runnable {
     }
 
     private void writeFile(Data data) {
-        Server.dataNode.writeMultiple(data, login);
+        Server.dataNode.writeMultiple(data, lo+gin);
         messenger.close();
     }
 

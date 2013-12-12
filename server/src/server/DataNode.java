@@ -33,7 +33,6 @@ public class DataNode extends Thread {
     void copyTo(int id, String fileName) {
         if (verbose) System.out.println("DataNode: "+fileName+" copyTo "+id);
         Archive archive = memory.mem.get("memory/"+fileName);
-        System.out.println(archive);
         executor.submit(new writeMultipleThread((Data) archive, "memory", id));
     }
 
