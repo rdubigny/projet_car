@@ -14,6 +14,7 @@ import java.util.List;
  * @author scar
  */
 public class IdList extends Data {
+    private static final long serialVersionUID = 6529685098267754768L;
 
     public List<Integer> list;
     

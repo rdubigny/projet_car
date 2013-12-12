@@ -38,7 +38,7 @@ public class Server {
             
             System.out.println("Launching services...");
             // launch the main services as threads here
-            buddyManager = new BuddyManager(true);
+            buddyManager = new BuddyManager(false);
             buddyManager.start();
             System.out.println("BuddyManager launched!");
             

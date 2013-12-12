@@ -1,6 +1,7 @@
 package data;
 
 public class Archive extends Data {
+    private static final long serialVersionUID = 6529685098267754752L;
     /* attribute */
     private String fileName;
     private String owner;
@@ -15,6 +16,10 @@ public class Archive extends Data {
     /* getter */
     public String getFileName() {
         return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
     
     public String getOwner() {

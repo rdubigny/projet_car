@@ -32,31 +32,29 @@ public class DataNode extends Thread {
 
     void copyTo(int id, String fileName) {
         if (verbose) System.out.println("DataNode: "+fileName+" copyTo "+id);
-        Archive archive = memory.mem.get("memory/"+fileName);
-        executor.submit(new writeMultipleThread((Data) archive, "memory", id));
+        Archive archive = memory.mem.get(fileName);
+        executor.submit(new writeMultipleThread((Data) archive, id));
     }
 
-    void writeMultiple(Data data, String login) {
+    void writeMultiple(Data data) {
         if (verbose) System.out.println("DataNode: writeMultiple");
         ArchiveAndList fData = (ArchiveAndList) data;
         Archive archive = fData.archive;
         List<Integer> list = fData.list;
-        executor.submit(new writeSimpleThread((Data) archive, login));
+        executor.submit(new writeSimpleThread((Data) archive));
         for (int i = 0; i < list.size(); i++) {
             int id = list.get(i);
-            executor.submit(new writeMultipleThread((Data) archive, login, id));
+            executor.submit(new writeMultipleThread((Data) archive, id));
         }
     }
 
     private class writeMultipleThread implements Runnable {
 
         Data data;
-        String login;
         int id;
 
-        public writeMultipleThread(Data data, String login, int id) {
+        public writeMultipleThread(Data data, int id) {
             this.data = data;
-            this.login = login;
             this.id = id;
         }
 
@@ -68,7 +66,7 @@ public class DataNode extends Thread {
                 messenger = new Messenger(
                         new Socket(value.getAddress(),
                                 value.getServerPort()));
-                DataContainer resp = new DataContainer("WRITE", login, data);
+                DataContainer resp = new DataContainer("WRITE", data);
                 messenger.send(resp);
                 messenger.close();
             } catch (IOException ex) {
@@ -77,41 +75,39 @@ public class DataNode extends Thread {
         }
     }
 
-    void writeSimple(Data data, String login) {
+    void writeSimple(Data data) {
         if (verbose) System.out.println("DataNode: writeSimple");
-        executor.submit(new writeSimpleThread(data, login));
+        executor.submit(new writeSimpleThread(data));
     }
 
     private class writeSimpleThread implements Runnable {
 
         Archive archive;
-        String login;
 
-        public writeSimpleThread(Data data, String login) {
+        public writeSimpleThread(Data data) {
             this.archive = (Archive) data;
-            this.login = login;
         }
 
         @Override
         public void run() {
             System.out.println("CREATE A FILE");
-            System.out.println(login + "/" + archive.getFileName());
-            Server.dataNode.memory.mem_tmp.put(login + "/" + archive.getFileName(), archive);
+            System.out.println(archive.getFileName());
+            Server.dataNode.memory.mem_tmp.put(archive.getFileName(), archive);
             try {
                 ServerData master = Config.getInstance().getMaster();
                 Messenger messenger;
                 messenger = new Messenger(
                         new Socket(master.getAddress(),
                                 master.getServerPort()));
-                DataContainer resp = new DataContainer("WRITEOK", login + "/" + archive.getFileName());
+                DataContainer resp = new DataContainer("WRITEOK", archive.getFileName());
                 messenger.send(resp);
                 DataContainer masterResp;
                 masterResp = messenger.receive();
                 if (masterResp == null) {
-                    Server.dataNode.memory.mem_tmp.remove(login + "/" + archive.getFileName());
+                    Server.dataNode.memory.mem_tmp.remove(archive.getFileName());
                 } else if (masterResp.getContent().equals("DELIVER")) {
-                    Server.dataNode.memory.mem.put(login + "/" + archive.getFileName(), archive);
-                    Server.dataNode.memory.mem_tmp.remove(login + "/" + archive.getFileName());
+                    Server.dataNode.memory.mem.put(archive.getFileName(), archive);
+                    Server.dataNode.memory.mem_tmp.remove(archive.getFileName());
                 }
                 messenger.close();
             } catch (IOException ex) {

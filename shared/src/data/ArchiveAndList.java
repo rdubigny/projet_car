@@ -13,6 +13,7 @@ import java.util.List;
  * @author scar
  */
 public class ArchiveAndList extends Data{
+    private static final long serialVersionUID = 6529685098267754753L;
 
     public Archive archive;
     public List<Integer> list;

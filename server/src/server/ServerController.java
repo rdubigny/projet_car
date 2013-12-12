@@ -10,8 +10,6 @@ import data.DataContainer;
 import data.IdList;
 import data.Messenger;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.List;
 import server.utils.Config;
 import server.utils.Status;
 
@@ -106,7 +104,7 @@ public class ServerController implements Runnable {
             messenger.close();
             return true;
         } else if (command.equals("WRITE")) {
-            Server.dataNode.writeSimple(data, parameter);
+            Server.dataNode.writeSimple(data);
             messenger.close();
             return true;
         } else {

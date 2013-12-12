@@ -1,11 +1,14 @@
 package server;
 
+import data.Archive;
+import data.Data;
 import data.DataContainer;
 import data.Messenger;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -137,7 +140,7 @@ public class DataNodeManager extends Thread {
             if (theNode.get(fileName).size() <= Server.K) {
                 if (verbose) {
                     System.out.println("DataNodeManager: copies are needed for " + fileName);
-                    this.findDataServerToCopy(fileName, theNode.get(fileName));
+                    this.findDataServerToCopy(fileName, new LinkedList(theNode.get(fileName)));
                 }
             }
         }
@@ -175,7 +178,44 @@ public class DataNodeManager extends Thread {
             // register the copy
             this.addId(selectedServerId);
             // copy the file
-            Server.dataNode.copyTo(selectedServerId, fileName);
+            // look for a source from where to copy
+            boolean keepGoing = false;
+            int sourceServerId = -1, i = 0;
+            while (!keepGoing && i < list.size()) {
+                sourceServerId = (int) list.get(i);
+                ServerData sourceServer = serverList.get(sourceServerId);
+                if (sourceServer.getStatus() != Status.DOWN) {
+                    keepGoing = true;
+                }
+                i++;
+            }
+            if (verbose && !keepGoing) {
+                System.out.println("DataNodeManager: file " + fileName + " is loss!");
+            }
+            if (keepGoing) {
+                // now we have a source and a destination we can send the copy command
+                try {
+                    if (verbose) {
+                        System.out.println("DataNodeManager: copying from "
+                                + sourceServerId + " to " + selectedServerId);
+                    }
+                    ServerData sourceServer = serverList.get(sourceServerId);
+                    Messenger messenger;
+                    messenger = new Messenger(
+                            new Socket(sourceServer.getAddress(),
+                                    sourceServer.getServerPort()));
+                    Archive archive = new Archive(fileName, null);
+                    DataContainer rq = new DataContainer("COPYTO",
+                            String.valueOf(selectedServerId), (Data) archive);
+                    messenger.send(rq);
+                    messenger.close();
+                } catch (IOException ex) {
+                    if (verbose) {
+                        System.out.println("DataNodeManager: error! the file is registered but not copied!");
+                    }
+                    ex.printStackTrace(System.out);
+                }
+            }
         }
     }
 }

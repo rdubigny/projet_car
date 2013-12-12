@@ -28,15 +28,21 @@ public class Client {
                 messenger.send("WHEREISMASTER");
                 DataContainer resp = messenger.receive();
                 messenger.close();
-                if (resp.getContent().equals("MASTERIS")) {
-                    System.out.println("\nWelcome to your shared file system!");
-                    int masterId = Integer.parseInt(resp.getDescription());
-                    masterAddr = Config.config.get(masterId).getIpAddress();
-                    masterPort = Config.config.get(masterId).getClientPort();
-                    return;
+                if (resp != null){
+                    if (resp.getContent().equals("MASTERIS")) {
+                        System.out.println("\nWelcome to your shared file system!");
+                        int masterId = Integer.parseInt(resp.getDescription());
+                        masterAddr = Config.config.get(masterId).getIpAddress();
+                        masterPort = Config.config.get(masterId).getClientPort();
+                        return;
+                    }
                 }
             } catch (IOException e) {
                 // this server must be down
+            }
+            try {
+                TimeUnit.MILLISECONDS.sleep(200);
+            } catch (InterruptedException ex) {
             }
             id = (id + 1) % Config.config.size();
         }
@@ -171,6 +177,7 @@ public class Client {
                     Messenger mesData = new Messenger(new Socket(
                             Config.config.get(dataServerId).getIpAddress(),
                             Config.config.get(dataServerId).getClientPort()));
+                    mesData.send(preReq);
                     mesData.send(commandWrite2);
                     mesData.close();
                     file.delete();
@@ -193,13 +200,14 @@ public class Client {
                 IdList idListRead = (IdList) (respRead.getData());
                 int ran = (int) (Math.random() * idListRead.list.size());
                 int dataServerId = idListRead.list.remove(ran);
-                DataContainer commandRead2 = new DataContainer("READ", fileNameRead);
-                Messenger mesData;
                 try {
+                    DataContainer commandRead2 = new DataContainer("READ", fileNameRead);
+                    Messenger mesData;
                     System.out.println("File read at " + dataServerId);
                     mesData = new Messenger(new Socket(
                             Config.config.get(dataServerId).getIpAddress(),
                             Config.config.get(dataServerId).getClientPort()));
+                    mesData.send(preReq);
                     mesData.send(commandRead2);
                     DataContainer respRead2 = mesData.receive();
                     Archive archive = (Archive) respRead2.getData();
